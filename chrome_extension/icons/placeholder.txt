@@ -1,0 +1,8 @@
+This is a placeholder file for the Chrome extension icons.
+
+The following icon sizes are required:
+- icon16.png (16x16)
+- icon48.png (48x48)
+- icon128.png (128x128)
+
+Please replace this file with actual icon files in PNG format.
