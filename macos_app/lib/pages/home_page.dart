@@ -274,11 +274,12 @@ class _HomePageState extends ConsumerState<HomePage> {
           controlSize: ControlSize.large,
           onPressed: () {
             if (titleController.text.trim().isNotEmpty && urlController.text.trim().isNotEmpty) {
+              final appState = ref.read(appNotifier);
               final newUrl = UrlItem(
                 url: urlController.text.trim(),
                 title: titleController.text.trim(),
                 description: descriptionController.text.trim().isNotEmpty ? descriptionController.text.trim() : null,
-                categoryId: categoryId ?? appState.categories.first.id,
+                categoryId: categoryId ?? (appState.categories.isNotEmpty ? appState.categories.first.id : ''),
               );
               ref.read(appNotifier.notifier).addUrl(newUrl);
               Navigator.of(context).pop();
