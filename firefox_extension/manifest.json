@@ -1,0 +1,45 @@
+{
+  "manifest_version": 2,
+  "name": "Later",
+  "version": "1.0.0",
+  "description": "Save tabs for later viewing in the Later app",
+  "permissions": ["tabs", "storage", "clipboardWrite", "notifications"],
+  "browser_action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "background": {
+    "scripts": ["background.js"]
+  },
+  "commands": {
+    "_execute_browser_action": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+S",
+        "mac": "Command+Shift+S"
+      },
+      "description": "Save current tab to Later"
+    },
+    "save_all_tabs": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+A",
+        "mac": "Command+Shift+A"
+      },
+      "description": "Save all tabs to Later"
+    }
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "later@example.com",
+      "strict_min_version": "57.0"
+    }
+  }
+}
