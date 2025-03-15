@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:system_tray/system_tray.dart';
@@ -18,11 +19,12 @@ class SystemTrayManager {
     if (!settings.showSystemTrayIcon) return;
 
     // We first init the systray menu
-    String iconPath = Platform.isWindows
-        ? 'assets/app_icon.ico'
-        : 'assets/app_icon.png';
-    
-    await _systemTray.initSystemTray("Later", iconPath: iconPath);
+    String iconPath = Platform.isWindows ? 'assets/app_icon.ico' : 'assets/app_icon.png';
+
+    await _systemTray.initSystemTray(
+      title: "Later",
+      iconPath: iconPath,
+    );
 
     // Create context menu items
     List<MenuItem> items = [
@@ -30,12 +32,12 @@ class SystemTrayManager {
         label: 'Open Later',
         onClicked: () => _showApp(),
       ),
-      MenuItem.separator(),
+      MenuItem(label: '-'), // Separator
       MenuItem(
         label: 'Import Tabs from Clipboard',
         onClicked: () => _importTabsFromClipboard(),
       ),
-      MenuItem.separator(),
+      MenuItem(label: '-'), // Separator
       MenuItem(
         label: 'Exit',
         onClicked: () => exit(0),
@@ -67,7 +69,7 @@ class SystemTrayManager {
       final clipboardData = await Clipboard.getData(Clipboard.kTextPlain);
       if (clipboardData != null && clipboardData.text != null) {
         final text = clipboardData.text!;
-        
+
         // Try to parse as JSON
         try {
           // This is a placeholder for actual implementation
@@ -76,9 +78,7 @@ class SystemTrayManager {
                 UrlItem(
                   url: text,
                   title: 'Imported from clipboard',
-                  categoryId: _ref.read(appNotifier).categories.isNotEmpty
-                      ? _ref.read(appNotifier).categories.first.id
-                      : '',
+                  categoryId: _ref.read(appNotifier).categories.isNotEmpty ? _ref.read(appNotifier).categories.first.id : '',
                 ),
               );
         } catch (e) {
@@ -88,9 +88,7 @@ class SystemTrayManager {
                   UrlItem(
                     url: text,
                     title: 'Imported from clipboard',
-                    categoryId: _ref.read(appNotifier).categories.isNotEmpty
-                        ? _ref.read(appNotifier).categories.first.id
-                        : '',
+                    categoryId: _ref.read(appNotifier).categories.isNotEmpty ? _ref.read(appNotifier).categories.first.id : '',
                   ),
                 );
           }
