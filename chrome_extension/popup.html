@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Later</title>
+  <meta charset="utf-8">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      width: 300px;
+      padding: 16px;
+      margin: 0;
+      color: #333;
+    }
+    
+    h1 {
+      font-size: 18px;
+      margin: 0 0 16px 0;
+      color: #007AFF;
+      text-align: center;
+    }
+    
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    
+    label {
+      font-size: 14px;
+      font-weight: 500;
+    }
+    
+    select {
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+      background-color: #f5f5f7;
+    }
+    
+    .button-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    
+    button {
+      padding: 10px 16px;
+      border-radius: 6px;
+      border: none;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    
+    .primary {
+      background-color: #007AFF;
+      color: white;
+    }
+    
+    .primary:hover {
+      background-color: #0062cc;
+    }
+    
+    .secondary {
+      background-color: #f5f5f7;
+      color: #333;
+      border: 1px solid #ccc;
+    }
+    
+    .secondary:hover {
+      background-color: #e5e5e7;
+    }
+    
+    .status {
+      margin-top: 12px;
+      padding: 8px;
+      border-radius: 6px;
+      font-size: 14px;
+      text-align: center;
+      display: none;
+    }
+    
+    .success {
+      background-color: #d4edda;
+      color: #155724;
+      display: block;
+    }
+    
+    .error {
+      background-color: #f8d7da;
+      color: #721c24;
+      display: block;
+    }
+    
+    .create-category {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 4px;
+    }
+    
+    .create-category input {
+      flex: 1;
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+    }
+    
+    .create-category button {
+      padding: 8px;
+      min-width: 80px;
+    }
+    
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>Later</h1>
+  
+  <div class="container">
+    <div class="form-group">
+      <label for="category">Category:</label>
+      <select id="category">
+        <option value="">Loading categories...</option>
+      </select>
+      
+      <div class="create-category hidden" id="newCategoryForm">
+        <input type="text" id="newCategory" placeholder="New category name">
+        <button class="secondary" id="createCategory">Create</button>
+      </div>
+      
+      <a href="#" id="showNewCategory" style="font-size: 12px; margin-top: 4px; color: #007AFF; text-decoration: none;">+ Create new category</a>
+    </div>
+    
+    <div class="button-group">
+      <button class="primary" id="saveCurrentTab">Save Current Tab</button>
+      <button class="secondary" id="saveAllTabs">Save All Tabs</button>
+    </div>
+    
+    <div class="status" id="status"></div>
+  </div>
+  
+  <script src="popup.js"></script>
+</body>
+</html>
