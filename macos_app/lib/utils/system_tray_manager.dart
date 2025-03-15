@@ -9,7 +9,6 @@ import '../providers/providers.dart';
 
 class SystemTrayManager {
   final SystemTray _systemTray = SystemTray();
-  final AppWindow _appWindow = AppWindow();
   final ProviderRef _ref;
 
   SystemTrayManager(this._ref);
@@ -19,43 +18,48 @@ class SystemTrayManager {
     if (!settings.showSystemTrayIcon) return;
 
     // We first init the systray menu
-    await _systemTray.initSystemTray(
-      title: "Later",
-      iconPath: Platform.isWindows
-          ? 'assets/app_icon.ico'
-          : 'assets/app_icon.png',
-    );
+    String iconPath = Platform.isWindows
+        ? 'assets/app_icon.ico'
+        : 'assets/app_icon.png';
+    
+    await _systemTray.initSystemTray("Later", iconPath: iconPath);
 
-    // Create context menu
-    final Menu menu = Menu();
-    await menu.buildFrom([
-      MenuItemLabel(
+    // Create context menu items
+    List<MenuItem> items = [
+      MenuItem(
         label: 'Open Later',
-        onClicked: (menuItem) => _appWindow.show(),
+        onClicked: () => _showApp(),
       ),
-      MenuSeparator(),
-      MenuItemLabel(
+      MenuItem.separator(),
+      MenuItem(
         label: 'Import Tabs from Clipboard',
-        onClicked: (menuItem) => _importTabsFromClipboard(),
+        onClicked: () => _importTabsFromClipboard(),
       ),
-      MenuSeparator(),
-      MenuItemLabel(
+      MenuItem.separator(),
+      MenuItem(
         label: 'Exit',
-        onClicked: (menuItem) => exit(0),
+        onClicked: () => exit(0),
       ),
-    ]);
+    ];
 
     // Set the context menu
-    await _systemTray.setContextMenu(menu);
+    await _systemTray.setContextMenu(items);
 
     // Handle system tray events
     _systemTray.registerSystemTrayEventHandler((eventName) {
-      if (eventName == kSystemTrayEventClick) {
-        _appWindow.show();
-      } else if (eventName == kSystemTrayEventRightClick) {
+      debugPrint("System tray event: $eventName");
+      if (eventName == "click") {
+        _showApp();
+      } else if (eventName == "right-click") {
         _systemTray.popUpContextMenu();
       }
     });
+  }
+
+  void _showApp() {
+    // This would typically use a platform channel to show the app
+    // For now, we'll just print a message
+    debugPrint("Show app");
   }
 
   Future<void> _importTabsFromClipboard() async {
@@ -93,7 +97,7 @@ class SystemTrayManager {
         }
       }
     } catch (e) {
-      print('Error importing tabs from clipboard: $e');
+      debugPrint('Error importing tabs from clipboard: $e');
     }
   }
 }
