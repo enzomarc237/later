@@ -95,16 +95,34 @@ class SettingsPage extends ConsumerWidget {
           style: MacosTheme.of(context).typography.headline,
         ),
         const SizedBox(height: 8),
-        MacosSegmentedControl<ThemeMode>(
-          segments: const {
-            ThemeMode.system: MacosSegmentedControlSegment(label: 'System'),
-            ThemeMode.light: MacosSegmentedControlSegment(label: 'Light'),
-            ThemeMode.dark: MacosSegmentedControlSegment(label: 'Dark'),
+        Row(
+          children: [
+            _buildThemeRadioButton(context, ref, settings, ThemeMode.system, 'System'),
+            const SizedBox(width: 16),
+            _buildThemeRadioButton(context, ref, settings, ThemeMode.light, 'Light'),
+            const SizedBox(width: 16),
+            _buildThemeRadioButton(context, ref, settings, ThemeMode.dark, 'Dark'),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildThemeRadioButton(BuildContext context, WidgetRef ref, Settings settings, ThemeMode mode, String label) {
+    return Row(
+      children: [
+        MacosRadioButton(
+          value: settings.themeMode == mode,
+          onChanged: (value) {
+            if (value) {
+              ref.read(settingsNotifier.notifier).setThemeMode(mode);
+            }
           },
-          value: settings.themeMode,
-          onValueChanged: (value) {
-            ref.read(settingsNotifier.notifier).setThemeMode(value);
-          },
+        ),
+        const SizedBox(width: 8),
+        Text(
+          label,
+          style: MacosTheme.of(context).typography.body,
         ),
       ],
     );
