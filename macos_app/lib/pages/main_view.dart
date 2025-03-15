@@ -62,25 +62,29 @@ class _MainViewState extends ConsumerState<MainView> {
                       itemBuilder: (context, index) {
                         final category = filteredCategories[index];
                         final isSelected = category.id == appState.selectedCategoryId;
-                        return MacosListTile(
-                          leading: const MacosIcon(CupertinoIcons.folder),
-                          title: Text(category.name),
-                          onClick: () {
-                            ref.read(appNotifier.notifier).selectCategory(category.id);
-                          },
-                          backgroundColor: isSelected ? MacosTheme.of(context).selection : Colors.transparent,
+                        return Container(
+                          color: isSelected ? MacosColors.controlAccentColor.withOpacity(0.2) : Colors.transparent,
+                          child: MacosListTile(
+                            leading: const MacosIcon(CupertinoIcons.folder),
+                            title: Text(category.name),
+                            onClick: () {
+                              ref.read(appNotifier.notifier).selectCategory(category.id);
+                            },
+                          ),
                         );
                       },
                     ),
             ),
             const Divider(),
-            MacosListTile(
-              leading: const MacosIcon(CupertinoIcons.gear),
-              title: const Text('Settings'),
-              onClick: () {
-                setState(() => _pageIndex = 1);
-              },
-              backgroundColor: _pageIndex == 1 ? MacosTheme.of(context).selection : Colors.transparent,
+            Container(
+              color: _pageIndex == 1 ? MacosColors.controlAccentColor.withOpacity(0.2) : Colors.transparent,
+              child: MacosListTile(
+                leading: const MacosIcon(CupertinoIcons.gear),
+                title: const Text('Settings'),
+                onClick: () {
+                  setState(() => _pageIndex = 1);
+                },
+              ),
             ),
             Padding(
               padding: const EdgeInsets.all(8.0),
@@ -122,6 +126,7 @@ class _MainViewState extends ConsumerState<MainView> {
     showMacosAlertDialog(
       context: context,
       builder: (_) => MacosAlertDialog(
+        appIcon: const FlutterLogo(size: 56),
         title: const Text('Create New Category'),
         message: Padding(
           padding: const EdgeInsets.symmetric(vertical: 16.0),
