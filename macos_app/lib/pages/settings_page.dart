@@ -111,11 +111,12 @@ class SettingsPage extends ConsumerWidget {
   Widget _buildThemeRadioButton(BuildContext context, WidgetRef ref, Settings settings, ThemeMode mode, String label) {
     return Row(
       children: [
-        MacosRadioButton(
-          value: settings.themeMode == mode,
+        MacosRadioButton<ThemeMode>(
+          value: mode,
+          groupValue: settings.themeMode,
           onChanged: (value) {
-            if (value) {
-              ref.read(settingsNotifier.notifier).setThemeMode(mode);
+            if (value != null) {
+              ref.read(settingsNotifier.notifier).setThemeMode(value);
             }
           },
         ),
