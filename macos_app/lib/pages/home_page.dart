@@ -43,8 +43,13 @@ class _HomePageState extends ConsumerState<HomePage> {
           )
         : Category(name: 'All URLs');
 
-    // Get URLs for the selected category
-    final urls = selectedCategoryId != null ? appState.urls.where((url) => url.categoryId == selectedCategoryId).toList() : appState.urls;
+    // Get URLs for the selected category using the getter from AppState
+    // This ensures we're using the same logic as in the AppState class
+    final urls = selectedCategoryId == null ? appState.urls : appState.selectedCategoryUrls;
+
+    // Debug print to verify we're getting the correct URLs
+    debugPrint('Selected category: ${selectedCategoryId == null ? "All URLs" : selectedCategory.name}');
+    debugPrint('Total URLs: ${appState.urls.length}, Filtered URLs: ${urls.length}');
 
     // Filter URLs by search query
     final filteredUrls = urls.where((url) => _searchQuery.isEmpty || url.title.toLowerCase().contains(_searchQuery.toLowerCase()) || url.url.toLowerCase().contains(_searchQuery.toLowerCase()) || (url.description?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false)).toList();
