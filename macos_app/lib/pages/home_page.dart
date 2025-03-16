@@ -4,8 +4,10 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:macos_ui/macos_ui.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../models/models.dart';
 import '../providers/providers.dart';
@@ -221,7 +223,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                   controlSize: ControlSize.small,
                   secondary: true,
                   onPressed: () {
-                    // Copy URL to clipboard
+                    _copyUrlToClipboard(context, url.url);
                   },
                   child: const Text('Copy'),
                 ),
@@ -229,7 +231,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                 PushButton(
                   controlSize: ControlSize.small,
                   onPressed: () {
-                    // Open URL in browser
+                    _openUrlInBrowser(context, url.url);
                   },
                   child: const Text('Open'),
                 ),
@@ -239,6 +241,30 @@ class _HomePageState extends ConsumerState<HomePage> {
         ),
       ),
     );
+  }
+
+  void _copyUrlToClipboard(BuildContext context, String url) async {
+    try {
+      await Clipboard.setData(ClipboardData(text: url));
+      _showSuccessDialog(context, 'URL Copied', 'URL copied to clipboard.');
+    } catch (e) {
+      debugPrint('Error copying URL to clipboard: $e');
+      _showErrorDialog(context, 'Copy Failed', 'Failed to copy URL to clipboard.');
+    }
+  }
+
+  void _openUrlInBrowser(BuildContext context, String urlString) async {
+    try {
+      final url = Uri.parse(urlString);
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url);
+      } else {
+        _showErrorDialog(context, 'Open Failed', 'Could not open URL: $urlString');
+      }
+    } catch (e) {
+      debugPrint('Error opening URL: $e');
+      _showErrorDialog(context, 'Open Failed', 'Failed to open URL: $urlString');
+    }
   }
 
   void _showAddUrlDialog(BuildContext context, String? categoryId) {
