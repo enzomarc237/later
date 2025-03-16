@@ -385,14 +385,118 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-  void _exportUrls(BuildContext context) {
-    // Implement export functionality
+  void _exportUrls(BuildContext context) async {
+    try {
+      // Get export data from AppNotifier
+      final exportData = ref.read(appNotifier.notifier).exportData();
+      
+      // Convert to JSON
+      final jsonString = jsonEncode(exportData.toJson());
+      
+      // Get save location
+      final saveLocation = await FilePicker.platform.saveFile(
+        dialogTitle: 'Save URLs',
+        fileName: 'later_export_${DateTime.now().millisecondsSinceEpoch}.json',
+        allowedExtensions: ['json'],
+        type: FileType.custom,
+      );
+      
+      if (saveLocation != null) {
+        // Write to file
+        final file = File(saveLocation);
+        await file.writeAsString(jsonString);
+        
+        // Show success message
+        _showSuccessDialog(context, 'Export Successful', 'URLs exported successfully.');
+      }
+    } catch (e) {
+      debugPrint('Error exporting URLs: $e');
+      _showErrorDialog(context, 'Export Failed', 'Failed to export URLs: $e');
+    }
   }
 
-  void _importUrls(BuildContext context) {
-    // Implement import functionality
+  void _importUrls(BuildContext context) async {
+    try {
+      // Get file to import
+      final result = await FilePicker.platform.pickFiles(
+        dialogTitle: 'Import URLs',
+        allowedExtensions: ['json'],
+        type: FileType.custom,
+      );
+      
+      if (result != null && result.files.single.path != null) {
+        // Read file
+        final file = File(result.files.single.path!);
+        final jsonString = await file.readAsString();
+        
+        // Parse JSON
+        final jsonData = jsonDecode(jsonString) as Map<String, dynamic>;
+        final importData = ExportData.fromJson(jsonData);
+        
+        // Import data
+        ref.read(appNotifier.notifier).importData(importData);
+        
+        // Show success message
+        _showSuccessDialog(
+          context, 
+          'Import Successful', 
+          'Imported ${importData.urls.length} URLs and ${importData.categories.length} categories.'
+        );
+      }
+    } catch (e) {
+      debugPrint('Error importing URLs: $e');
+      _showErrorDialog(context, 'Import Failed', 'Failed to import URLs: $e');
+    }
+  }
+  
+  void _showSuccessDialog(BuildContext context, String title, String message) {
+    showMacosAlertDialog(
+      context: context,
+      builder: (_) => MacosAlertDialog(
+        appIcon: const MacosIcon(
+          CupertinoIcons.check_mark_circled,
+          size: 56,
+          color: MacosColors.systemGreenColor,
+        ),
+        title: Text(title),
+        message: Text(message),
+        primaryButton: PushButton(
+          controlSize: ControlSize.large,
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          child: const Text('OK'),
+        ),
+      ),
+    );
+  }
+  
+  void _showErrorDialog(BuildContext context, String title, String message) {
+    showMacosAlertDialog(
+      context: context,
+      builder: (_) => MacosAlertDialog(
+        appIcon: const MacosIcon(
+          CupertinoIcons.exclamationmark_circle,
+          size: 56,
+          color: MacosColors.systemRedColor,
+        ),
+        title: Text(title),
+        message: Text(message),
+        primaryButton: PushButton(
+          controlSize: ControlSize.large,
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          child: const Text('OK'),
+        ),
+      ),
+    );
   }
 }
+
+// Add missing imports at the top of the file
+import 'dart:convert';
+import 'dart:io';
 
 class MacosCard extends StatelessWidget {
   final Widget child;
