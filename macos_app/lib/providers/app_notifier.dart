@@ -137,6 +137,16 @@ class AppNotifier extends Notifier<AppState> {
     state = state.copyWith(selectedCategoryId: categoryId);
   }
 
+  // Explicitly clear the selected category
+  void clearSelectedCategory() {
+    debugPrint('Explicitly clearing selected category');
+    state = state.copyWith(
+      selectedCategoryId: null,
+      clearSelectedCategory: true,
+    );
+    debugPrint('Selected category after clearing: ${state.selectedCategoryId}');
+  }
+
   // URL management
   void addUrl(UrlItem url) {
     final updatedUrls = [...state.urls, url];
