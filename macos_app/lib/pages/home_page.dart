@@ -230,6 +230,15 @@ class _HomePageState extends ConsumerState<HomePage> {
                 const SizedBox(width: 8),
                 PushButton(
                   controlSize: ControlSize.small,
+                  secondary: true,
+                  onPressed: () {
+                    _showUrlPreview(context, url);
+                  },
+                  child: const Text('Preview'),
+                ),
+                const SizedBox(width: 8),
+                PushButton(
+                  controlSize: ControlSize.small,
                   onPressed: () {
                     _openUrlInBrowser(context, url.url);
                   },
@@ -238,6 +247,97 @@ class _HomePageState extends ConsumerState<HomePage> {
               ],
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  void _showUrlPreview(BuildContext context, UrlItem url) {
+    showMacosAlertDialog(
+      context: context,
+      builder: (_) => MacosAlertDialog(
+        appIcon: const MacosIcon(
+          CupertinoIcons.link,
+          size: 56,
+          color: MacosColors.systemBlueColor,
+        ),
+        title: Text(url.title),
+        message: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 16),
+            Text(
+              'URL:',
+              style: MacosTheme.of(context).typography.subheadline.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            const SizedBox(height: 4),
+            SelectableText(
+              url.url,
+              style: MacosTheme.of(context).typography.body.copyWith(
+                    color: MacosColors.systemBlueColor,
+                  ),
+            ),
+            if (url.description != null && url.description!.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              Text(
+                'Description:',
+                style: MacosTheme.of(context).typography.subheadline.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+              const SizedBox(height: 4),
+              SelectableText(
+                url.description!,
+                style: MacosTheme.of(context).typography.body,
+              ),
+            ],
+            const SizedBox(height: 16),
+            Text(
+              'Added on:',
+              style: MacosTheme.of(context).typography.subheadline.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '${url.createdAt.day}/${url.createdAt.month}/${url.createdAt.year} at ${url.createdAt.hour}:${url.createdAt.minute.toString().padLeft(2, '0')}',
+              style: MacosTheme.of(context).typography.body,
+            ),
+            if (url.metadata != null && url.metadata!.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              Text(
+                'Metadata:',
+                style: MacosTheme.of(context).typography.subheadline.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+              const SizedBox(height: 4),
+              SelectableText(
+                url.metadata.toString(),
+                style: MacosTheme.of(context).typography.body,
+              ),
+            ],
+          ],
+        ),
+        primaryButton: PushButton(
+          controlSize: ControlSize.large,
+          onPressed: () {
+            _openUrlInBrowser(context, url.url);
+            Navigator.of(context).pop();
+          },
+          child: const Text('Open in Browser'),
+        ),
+        secondaryButton: PushButton(
+          controlSize: ControlSize.large,
+          secondary: true,
+          onPressed: () {
+            _copyUrlToClipboard(context, url.url);
+            Navigator.of(context).pop();
+          },
+          child: const Text('Copy URL'),
         ),
       ),
     );
