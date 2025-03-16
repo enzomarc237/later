@@ -37,6 +37,43 @@ class _MainViewState extends ConsumerState<MainView> {
           color: MacosTheme.of(context).canvasColor,
         ),
         minWidth: 200,
+        // Move All URLs button to the top of the sidebar
+        top: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: PushButton(
+            controlSize: ControlSize.large,
+            secondary: true,
+            color: appState.selectedCategoryId == null ? MacosColors.controlAccentColor : null,
+            onPressed: () {
+              // Explicitly call the selectCategory method with null to clear filters
+              ref.read(appNotifier.notifier).selectCategory(null);
+              // Force a rebuild to ensure UI updates
+              setState(() {
+                _pageIndex = 0; // Switch to HomePage
+              });
+              // Debug print to verify the function is called
+              debugPrint('All URLs button clicked, clearing filters');
+            },
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                MacosIcon(
+                  CupertinoIcons.doc_text_search,
+                  color: appState.selectedCategoryId == null ? MacosColors.controlAccentColor : MacosColors.systemGrayColor,
+                  size: 22.0,
+                ),
+                const SizedBox(width: 8.0),
+                Text(
+                  'All URLs',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: appState.selectedCategoryId == null ? MacosColors.controlAccentColor : MacosColors.systemGrayColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
         builder: (context, scrollController) => Column(
           children: [
             Padding(
@@ -49,37 +86,6 @@ class _MainViewState extends ConsumerState<MainView> {
                     _searchQuery = value;
                   });
                 },
-              ),
-            ),
-            // All URLs button at the top - Simplified to ensure it's clickable
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-              child: PushButton(
-                controlSize: ControlSize.large,
-                secondary: true,
-                color: appState.selectedCategoryId == null ? MacosColors.controlAccentColor : null,
-                onPressed: () {
-                  ref.read(appNotifier.notifier).selectCategory(null);
-                  // Switch to HomePage
-                  setState(() => _pageIndex = 0);
-                },
-                child: Row(
-                  children: [
-                    MacosIcon(
-                      CupertinoIcons.doc_text_search,
-                      color: appState.selectedCategoryId == null ? MacosColors.controlAccentColor : MacosColors.systemGrayColor,
-                      size: 22.0,
-                    ),
-                    const SizedBox(width: 8.0),
-                    Text(
-                      'All URLs',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: appState.selectedCategoryId == null ? MacosColors.controlAccentColor : MacosColors.systemGrayColor,
-                      ),
-                    ),
-                  ],
-                ),
               ),
             ),
             const SizedBox(height: 8.0), // Extra spacing
