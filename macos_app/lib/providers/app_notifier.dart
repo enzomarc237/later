@@ -62,9 +62,9 @@ class AppState {
     return 'AppState(message: $message, categories: ${categories.length}, urls: ${urls.length}, selectedCategoryId: $selectedCategoryId)';
   }
 
-  // Get URLs for the selected category
+  // Get URLs for the selected category or all URLs if no category is selected
   List<UrlItem> get selectedCategoryUrls {
-    if (selectedCategoryId == null) return [];
+    if (selectedCategoryId == null) return urls; // Return all URLs when no category is selected
     return urls.where((url) => url.categoryId == selectedCategoryId).toList();
   }
 }
