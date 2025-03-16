@@ -1,0 +1,6 @@
+framework module appkit_ui_element_colors {
+  umbrella header "appkit_ui_element_colors-umbrella.h"
+
+  export *
+  module * { export * }
+}

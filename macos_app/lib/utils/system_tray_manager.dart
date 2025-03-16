@@ -10,7 +10,7 @@ import '../providers/providers.dart';
 
 class SystemTrayManager {
   final SystemTray _systemTray = SystemTray();
-  final ProviderRef _ref;
+  final Ref _ref;
 
   SystemTrayManager(this._ref);
 
@@ -19,12 +19,9 @@ class SystemTrayManager {
     if (!settings.showSystemTrayIcon) return;
 
     // We first init the systray menu
-    String iconPath = Platform.isWindows ? 'assets/app_icon.ico' : 'assets/app_icon.png';
+    String iconPath = Platform.isWindows ? 'assets/icons/mac256.png' : 'assets/icons/mac256.png';
 
-    await _systemTray.initSystemTray(
-      title: "Later",
-      iconPath: iconPath,
-    );
+    await _systemTray.initSystemTray(title: "Later", iconPath: iconPath, toolTip: "Later Bookmarker is running in background");
 
     // Create context menu items
     List<MenuItem> items = [
@@ -50,9 +47,9 @@ class SystemTrayManager {
     // Handle system tray events
     _systemTray.registerSystemTrayEventHandler((eventName) {
       debugPrint("System tray event: $eventName");
-      if (eventName == "click") {
+      if (eventName == "leftMouseDown") {
         _showApp();
-      } else if (eventName == "right-click") {
+      } else if (eventName == "rightMouseDown") {
         _systemTray.popUpContextMenu();
       }
     });

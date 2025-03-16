@@ -1,0 +1,8 @@
+${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-frameworks.sh
+${BUILT_PRODUCTS_DIR}/appkit_ui_element_colors/appkit_ui_element_colors.framework
+${BUILT_PRODUCTS_DIR}/file_picker/file_picker.framework
+${BUILT_PRODUCTS_DIR}/macos_ui/macos_ui.framework
+${BUILT_PRODUCTS_DIR}/macos_window_utils/macos_window_utils.framework
+${BUILT_PRODUCTS_DIR}/shared_preferences_foundation/shared_preferences_foundation.framework
+${BUILT_PRODUCTS_DIR}/system_tray/system_tray.framework
+${BUILT_PRODUCTS_DIR}/url_launcher_macos/url_launcher_macos.framework

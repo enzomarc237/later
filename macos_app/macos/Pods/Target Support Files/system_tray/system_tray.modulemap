@@ -1,0 +1,6 @@
+framework module system_tray {
+  umbrella header "system_tray-umbrella.h"
+
+  export *
+  module * { export * }
+}

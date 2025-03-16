@@ -1,0 +1,87 @@
+# Flutter/Dart specific
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+*.iml
+*.lock
+*.log
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# VS Code related
+.vscode/
+*.code-workspace
+
+# Flutter Version Management
+.fvm/
+
+# macOS specific
+*.mode1v3
+*.mode2v3
+*.moved-aside
+*.pbxuser
+*.perspectivev3
+*.xccheckout
+*.xcscmblueprint
+*.xcuserstate
+*.xcworkspace/
+xcuserdata/
+DerivedData/
+.idea/
+.vscode/
+.vagrant/
+.sconsign.dblite
+.svn/
+
+# App specific
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+.env
+.env.*
+
+# Generated files
+*.g.dart
+*.freezed.dart
+*.mocks.dart
+*.config.dart
+
+# Coverage
+coverage/
+.test_coverage.dart
+coverage_badge.svg
+
+# Temporary files
+*.swp
+*.swo
+*~
+.*.sw[a-z]
+
+# Secure vault files
+secure_vault/
+vault/
+.vault/
+*.encrypted
+
+# System Files
+.DS_Store
+Thumbs.db

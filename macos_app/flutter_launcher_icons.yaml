@@ -1,0 +1,6 @@
+flutter_launcher_icons:
+  image_path: "assets/icons/mac512.png"
+  adaptive_icon_background: "#ffffff"
+  macos:
+    generate: true
+    image_path: "assets/icons/mac512.png"

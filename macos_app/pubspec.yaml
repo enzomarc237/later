@@ -1,4 +1,4 @@
-name: macosui_tool
+name: later
 description: A starter template for a macos tool application.
 publish_to: "none"
 version: 0.1.0+1
@@ -36,3 +36,5 @@ flutter:
   uses-material-design: true
   assets:
     - pubspec.yaml
+    - assets/
+    - assets/icons/
