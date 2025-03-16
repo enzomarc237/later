@@ -40,7 +40,7 @@ class _MainViewState extends ConsumerState<MainView> {
         builder: (context, scrollController) => Column(
           children: [
             Padding(
-              padding: const EdgeInsets.all(8.0),
+              padding: const EdgeInsets.all(12.0), // Increased padding
               child: MacosSearchField(
                 placeholder: 'Search categories',
                 controller: _searchController,
@@ -51,6 +51,49 @@ class _MainViewState extends ConsumerState<MainView> {
                 },
               ),
             ),
+            // All URLs button at the top
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: appState.selectedCategoryId == null ? MacosColors.controlAccentColor.withOpacity(0.2) : Colors.transparent,
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+                child: MacosListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0), // More padding
+                  leading: const MacosIcon(
+                    CupertinoIcons.doc_text_search,
+                    color: MacosColors.controlAccentColor,
+                    size: 22.0, // Slightly larger icon
+                  ),
+                  title: Text(
+                    'All URLs',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: appState.selectedCategoryId == null ? MacosColors.controlAccentColor : null,
+                    ),
+                  ),
+                  onClick: () {
+                    ref.read(appNotifier.notifier).selectCategory(null);
+                    // Switch to HomePage
+                    setState(() => _pageIndex = 0);
+                  },
+                ),
+              ),
+            ),
+            const SizedBox(height: 8.0), // Extra spacing
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.0),
+              child: Text(
+                'Categories',
+                style: TextStyle(
+                  fontSize: 12.0,
+                  fontWeight: FontWeight.bold,
+                  color: MacosColors.systemGrayColor,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8.0), // Extra spacing
             Expanded(
               child: appState.categories.isEmpty
                   ? const Center(
@@ -62,34 +105,51 @@ class _MainViewState extends ConsumerState<MainView> {
                       itemBuilder: (context, index) {
                         final category = filteredCategories[index];
                         final isSelected = category.id == appState.selectedCategoryId;
-                        return Container(
-                          color: isSelected ? MacosColors.controlAccentColor.withOpacity(0.2) : Colors.transparent,
-                          child: MacosListTile(
-                            leading: const MacosIcon(CupertinoIcons.folder),
-                            title: Text(category.name),
-                            onClick: () {
-                              ref.read(appNotifier.notifier).selectCategory(category.id);
-                              // Switch to HomePage when a category is selected
-                              setState(() => _pageIndex = 0);
-                            },
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0), // Added padding
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: isSelected ? MacosColors.controlAccentColor.withOpacity(0.2) : Colors.transparent,
+                              borderRadius: BorderRadius.circular(8.0), // Rounded corners
+                            ),
+                            child: MacosListTile(
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0), // More padding
+                              leading: const MacosIcon(CupertinoIcons.folder),
+                              title: Text(category.name),
+                              onClick: () {
+                                ref.read(appNotifier.notifier).selectCategory(category.id);
+                                // Switch to HomePage when a category is selected
+                                setState(() => _pageIndex = 0);
+                              },
+                            ),
                           ),
                         );
                       },
                     ),
             ),
-            const Divider(),
-            Container(
-              color: _pageIndex == 1 ? MacosColors.controlAccentColor.withOpacity(0.2) : Colors.transparent,
-              child: MacosListTile(
-                leading: const MacosIcon(CupertinoIcons.gear),
-                title: const Text('Settings'),
-                onClick: () {
-                  setState(() => _pageIndex = 1);
-                },
+            const Divider(
+              height: 24.0, // Increased height
+              thickness: 1.0,
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0), // Added padding
+              child: Container(
+                decoration: BoxDecoration(
+                  color: _pageIndex == 1 ? MacosColors.controlAccentColor.withOpacity(0.2) : Colors.transparent,
+                  borderRadius: BorderRadius.circular(8.0), // Rounded corners
+                ),
+                child: MacosListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0), // More padding
+                  leading: const MacosIcon(CupertinoIcons.gear),
+                  title: const Text('Settings'),
+                  onClick: () {
+                    setState(() => _pageIndex = 1);
+                  },
+                ),
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(8.0),
+              padding: const EdgeInsets.all(12.0), // Increased padding
               child: PushButton(
                 controlSize: ControlSize.regular,
                 onPressed: () {
@@ -99,7 +159,7 @@ class _MainViewState extends ConsumerState<MainView> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     MacosIcon(CupertinoIcons.add),
-                    SizedBox(width: 4),
+                    SizedBox(width: 8), // Increased spacing
                     Text('Create Category'),
                   ],
                 ),
