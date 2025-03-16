@@ -60,7 +60,7 @@ class _MainViewState extends ConsumerState<MainView> {
                   borderRadius: BorderRadius.circular(8.0),
                 ),
                 child: MacosListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0), // More padding
+                  // MacosListTile doesn't have contentPadding parameter
                   leading: const MacosIcon(
                     CupertinoIcons.doc_text_search,
                     color: MacosColors.controlAccentColor,
@@ -113,7 +113,7 @@ class _MainViewState extends ConsumerState<MainView> {
                               borderRadius: BorderRadius.circular(8.0), // Rounded corners
                             ),
                             child: MacosListTile(
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0), // More padding
+                              // MacosListTile doesn't have contentPadding parameter
                               leading: const MacosIcon(CupertinoIcons.folder),
                               title: Text(category.name),
                               onClick: () {
@@ -139,7 +139,7 @@ class _MainViewState extends ConsumerState<MainView> {
                   borderRadius: BorderRadius.circular(8.0), // Rounded corners
                 ),
                 child: MacosListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0), // More padding
+                  // MacosListTile doesn't have contentPadding parameter
                   leading: const MacosIcon(CupertinoIcons.gear),
                   title: const Text('Settings'),
                   onClick: () {
