@@ -6,6 +6,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:local_notifier/local_notifier.dart';
 import 'package:macos_ui/macos_ui.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -411,6 +412,13 @@ class _HomePageState extends ConsumerState<HomePage> {
                 categoryId: categoryId ?? (appState.categories.isNotEmpty ? appState.categories.first.id : ''),
               );
               ref.read(appNotifier.notifier).addUrl(newUrl);
+
+              // Show notification
+              LocalNotification(
+                title: 'URL Added',
+                body: 'Added URL: ${newUrl.title.length > 30 ? newUrl.title.substring(0, 27) + '...' : newUrl.title}',
+              ).show();
+
               Navigator.of(context).pop();
             }
           },
@@ -470,6 +478,13 @@ class _HomePageState extends ConsumerState<HomePage> {
                 description: descriptionController.text.trim().isNotEmpty ? descriptionController.text.trim() : null,
               );
               ref.read(appNotifier.notifier).updateUrl(updatedUrl);
+
+              // Show notification
+              LocalNotification(
+                title: 'URL Updated',
+                body: 'Updated URL: ${updatedUrl.title.length > 30 ? updatedUrl.title.substring(0, 27) + '...' : updatedUrl.title}',
+              ).show();
+
               Navigator.of(context).pop();
             }
           },
@@ -498,6 +513,13 @@ class _HomePageState extends ConsumerState<HomePage> {
           controlSize: ControlSize.large,
           onPressed: () {
             ref.read(appNotifier.notifier).deleteUrl(url.id);
+
+            // Show notification
+            LocalNotification(
+              title: 'URL Deleted',
+              body: 'Deleted URL: ${url.title.length > 30 ? url.title.substring(0, 27) + '...' : url.title}',
+            ).show();
+
             Navigator.of(context).pop();
           },
           child: const Text('Delete'),
@@ -537,6 +559,12 @@ class _HomePageState extends ConsumerState<HomePage> {
 
         // Show success message
         _showSuccessDialog(context, 'Export Successful', 'URLs exported successfully.');
+
+        // Show notification
+        LocalNotification(
+          title: 'Export Successful',
+          body: 'Exported ${exportData.urls.length} URLs to file',
+        ).show();
       }
     } catch (e) {
       debugPrint('Error exporting URLs: $e');
@@ -567,6 +595,12 @@ class _HomePageState extends ConsumerState<HomePage> {
 
         // Show success message
         _showSuccessDialog(context, 'Import Successful', 'Imported ${importData.urls.length} URLs and ${importData.categories.length} categories.');
+
+        // Show notification
+        LocalNotification(
+          title: 'Import Successful',
+          body: 'Imported ${importData.urls.length} URLs and ${importData.categories.length} categories',
+        ).show();
       }
     } catch (e) {
       debugPrint('Error importing URLs: $e');
