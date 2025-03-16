@@ -14,7 +14,9 @@ import '../models/models.dart';
 import '../providers/providers.dart';
 
 class HomePage extends ConsumerStatefulWidget {
-  const HomePage({super.key});
+  final VoidCallback? onSettingsPressed;
+
+  const HomePage({super.key, this.onSettingsPressed});
 
   @override
   ConsumerState<HomePage> createState() => _HomePageState();
@@ -97,6 +99,9 @@ class _HomePageState extends ConsumerState<HomePage> {
             icon: const MacosIcon(CupertinoIcons.gear),
             onPressed: () {
               // Navigate to settings page
+              if (widget.onSettingsPressed != null) {
+                widget.onSettingsPressed!();
+              }
             },
             showLabel: true,
           ),
