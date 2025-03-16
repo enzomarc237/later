@@ -109,7 +109,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       
       const tab = tabs[0];
-      saveTabToClipboard([tab], categoryId);
+      saveTabsToLater([tab], categoryId);
     }).catch(function(error) {
       console.error('Error querying tabs:', error);
     });
@@ -129,13 +129,13 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
       }
       
-      saveTabToClipboard(tabs, categoryId);
+      saveTabsToLater(tabs, categoryId);
     }).catch(function(error) {
       console.error('Error querying tabs:', error);
     });
   }
   
-  function saveTabToClipboard(tabs, categoryId) {
+  function saveTabsToLater(tabs, categoryId) {
     const urlItems = tabs.map(tab => {
       return {
         id: generateId(),
@@ -156,10 +156,71 @@ document.addEventListener('DOMContentLoaded', function() {
       exportedAt: new Date().toISOString()
     };
     
-    // Copy to clipboard
+    // Try to open with Later app using URL scheme
+    openWithLaterApp(exportData, tabs.length).then(success => {
+      if (!success) {
+        // Fallback to clipboard if URL scheme fails
+        copyToClipboard(exportData, tabs.length);
+      }
+    }).catch(error => {
+      console.error('Error opening with Later app:', error);
+      // Fallback to clipboard if URL scheme fails
+      copyToClipboard(exportData, tabs.length);
+    });
+  }
+  
+  function openWithLaterApp(exportData, tabCount) {
+    return new Promise((resolve, reject) => {
+      // Get category name for the selected category
+      browser.storage.sync.get('categories').then(data => {
+        const categories = data.categories || [];
+        const selectedCategory = categories.find(cat => cat.id === categorySelect.value);
+        const categoryName = selectedCategory ? selectedCategory.name : '';
+        
+        if (exportData.urls.length === 1) {
+          // For a single URL, use the simpler /add endpoint
+          const url = exportData.urls[0];
+          const laterUrl = `later:///add?url=${encodeURIComponent(url.url)}&title=${encodeURIComponent(url.title)}&category=${encodeURIComponent(categoryName)}`;
+          
+          browser.tabs.create({ url: laterUrl, active: false }).then(() => {
+            showStatus(`${tabCount} tab(s) sent to Later app.`, 'success');
+            resolve(true);
+          }).catch(error => {
+            console.error('Error opening URL scheme:', error);
+            resolve(false);
+          });
+        } else {
+          // For multiple URLs, use the /import endpoint with JSON data
+          const jsonString = JSON.stringify(exportData);
+          const laterUrl = `later:///import?data=${encodeURIComponent(jsonString)}`;
+          
+          // Check if the URL is too long (browsers have limits)
+          if (laterUrl.length > 2000) {
+            // Fallback to clipboard for large data
+            resolve(false);
+            return;
+          }
+          
+          browser.tabs.create({ url: laterUrl, active: false }).then(() => {
+            showStatus(`${tabCount} tab(s) sent to Later app.`, 'success');
+            resolve(true);
+          }).catch(error => {
+            console.error('Error opening URL scheme:', error);
+            resolve(false);
+          });
+        }
+      }).catch(error => {
+        console.error('Error getting categories:', error);
+        resolve(false);
+      });
+    });
+  }
+  
+  function copyToClipboard(exportData, tabCount) {
+    // Copy to clipboard as fallback
     const jsonString = JSON.stringify(exportData);
     navigator.clipboard.writeText(jsonString).then(function() {
-      showStatus(`${tabs.length} tab(s) copied to clipboard. Paste into Later app to import.`, 'success');
+      showStatus(`${tabCount} tab(s) copied to clipboard. Paste into Later app to import.`, 'success');
     }).catch(function(err) {
       console.error('Could not copy text: ', err);
       showStatus('Failed to copy to clipboard', 'error');
