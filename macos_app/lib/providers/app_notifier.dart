@@ -180,8 +180,11 @@ class AppNotifier extends Notifier<AppState> {
   }
 
   void importData(ExportData data) {
+    // Preserve existing categories if the imported data has an empty categories array
+    final categories = data.categories.isEmpty ? state.categories : data.categories;
+
     state = state.copyWith(
-      categories: data.categories,
+      categories: categories,
       urls: data.urls,
       isLoading: false,
     );
