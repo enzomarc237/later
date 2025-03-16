@@ -69,6 +69,8 @@ class _MainViewState extends ConsumerState<MainView> {
                             title: Text(category.name),
                             onClick: () {
                               ref.read(appNotifier.notifier).selectCategory(category.id);
+                              // Switch to HomePage when a category is selected
+                              setState(() => _pageIndex = 0);
                             },
                           ),
                         );
