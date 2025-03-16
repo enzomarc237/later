@@ -174,18 +174,16 @@ document.addEventListener("DOMContentLoaded", function () {
             url.title,
           )}&category=${encodeURIComponent(categoryName)}`;
 
-          // Use hidden iframe instead of opening a new tab
-          openUrlWithHiddenIframe(
-            laterUrl,
-            () => {
-              showStatus(`${tabCount} tab(s) sent to Later app.`, "success");
-              resolve(true);
-            },
-            () => {
-              console.error("Error opening URL scheme");
-              resolve(false);
-            },
-          );
+          // Show status message before navigating
+          showStatus(`${tabCount} tab(s) sent to Later app.`, "success");
+
+          // Use simple window.location to open URL scheme
+          // This will close the popup but trigger the scheme handler
+          setTimeout(() => {
+            window.location.href = laterUrl;
+          }, 300); // Short delay to ensure status message is shown
+
+          resolve(true);
         } else {
           // For multiple URLs, use the /import endpoint with JSON data
           const jsonString = JSON.stringify(exportData);
@@ -200,59 +198,19 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
           }
 
-          // Use hidden iframe instead of opening a new tab
-          openUrlWithHiddenIframe(
-            laterUrl,
-            () => {
-              showStatus(`${tabCount} tab(s) sent to Later app.`, "success");
-              resolve(true);
-            },
-            () => {
-              console.error("Error opening URL scheme");
-              resolve(false);
-            },
-          );
+          // Show status message before navigating
+          showStatus(`${tabCount} tab(s) sent to Later app.`, "success");
+
+          // Use simple window.location to open URL scheme
+          // This will close the popup but trigger the scheme handler
+          setTimeout(() => {
+            window.location.href = laterUrl;
+          }, 300); // Short delay to ensure status message is shown
+
+          resolve(true);
         }
       });
     });
-  }
-
-  function openUrlWithHiddenIframe(url, onSuccess, onError) {
-    try {
-      // Create a hidden iframe
-      const iframe = document.createElement("iframe");
-      iframe.style.display = "none";
-      iframe.src = url;
-
-      // Add event listeners for success/error
-      iframe.onload = function () {
-        // Success - the iframe loaded
-        setTimeout(() => {
-          document.body.removeChild(iframe);
-          onSuccess();
-        }, 300);
-      };
-
-      iframe.onerror = function () {
-        // Error - the iframe failed to load
-        document.body.removeChild(iframe);
-        onError();
-      };
-
-      // Add the iframe to the document
-      document.body.appendChild(iframe);
-
-      // Set a timeout to remove the iframe even if no events fire
-      setTimeout(() => {
-        if (document.body.contains(iframe)) {
-          document.body.removeChild(iframe);
-          onSuccess(); // Assume success if we didn't get an error
-        }
-      }, 1000);
-    } catch (error) {
-      console.error("Error creating iframe:", error);
-      onError();
-    }
   }
 
   function copyToClipboard(exportData, tabCount) {
