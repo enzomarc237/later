@@ -19,8 +19,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize local notifier
-  final localNotifier = LocalNotifier();
-  await localNotifier.setup(appName: 'Later');
+  await LocalNotifier.setup(appName: 'Later');
 
   final sharedPreferences = await SharedPreferences.getInstance();
   final pubspec = Pubspec.parse(await rootBundle.loadString('pubspec.yaml'));
