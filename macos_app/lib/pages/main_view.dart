@@ -182,9 +182,13 @@ class _MainViewState extends ConsumerState<MainView> {
       ),
       child: IndexedStack(
         index: _pageIndex,
-        children: const [
-          HomePage(),
-          SettingsPage(),
+        children: [
+          HomePage(
+            onSettingsPressed: () {
+              setState(() => _pageIndex = 1);
+            },
+          ),
+          const SettingsPage(),
         ],
       ),
     );
