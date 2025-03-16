@@ -4,14 +4,16 @@ import 'dart:io';
 import 'package:flutter/foundation.dart' hide Category;
 import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:local_notifier/local_notifier.dart';
 import 'package:system_tray/system_tray.dart';
+import 'package:window_manager/window_manager.dart';
 
 import '../models/category.dart';
 import '../models/export_data.dart';
 import '../models/url_item.dart';
 import '../providers/providers.dart';
 
-class SystemTrayManager {
+class SystemTrayManager with WindowListener {
   final SystemTray _systemTray = SystemTray();
   final Ref _ref;
 
@@ -19,9 +21,20 @@ class SystemTrayManager {
 
   Future<void> initSystemTray() async {
     final settings = _ref.read(settingsNotifier);
+
+    // Initialize window manager
+    await windowManager.ensureInitialized();
+
+    // Add window listener to handle window events
+    windowManager.addListener(this);
+
+    // Set window options
+    await windowManager.setPreventClose(true);
+    await windowManager.setTitle('Later');
+
     if (!settings.showSystemTrayIcon) return;
 
-    // We first init the systray menu
+    // Initialize system tray
     String iconPath = Platform.isWindows ? 'assets/icons/mac256.png' : 'assets/icons/mac256.png';
 
     await _systemTray.initSystemTray(title: "Later", iconPath: iconPath, toolTip: "Later Bookmarker is running in background");
@@ -44,7 +57,7 @@ class SystemTrayManager {
       MenuItem(label: '-'), // Separator
       MenuItem(
         label: 'Exit',
-        onClicked: () => exit(0),
+        onClicked: () => _exitApp(),
       ),
     ];
 
@@ -62,14 +75,68 @@ class SystemTrayManager {
     });
   }
 
-  void _showApp() {
-    // This would typically use a platform channel or window_manager package to show the app
-    // For now, we'll just print a message
-    debugPrint("Show app - window_manager package needed for full implementation");
+  // Window manager listener methods
+  @override
+  void onWindowClose() async {
+    // Hide the window instead of closing it
+    await _hideApp();
 
-    // TODO: Add window_manager package to dependencies and implement proper window showing:
-    // await windowManager.show();
-    // await windowManager.focus();
+    // Show notification that app is still running
+    _showNotification(
+      'Later is still running',
+      'The app is now minimized to the system tray. Click the icon to open it again.',
+    );
+  }
+
+  Future<void> _showApp() async {
+    try {
+      bool isVisible = await windowManager.isVisible();
+      if (!isVisible) {
+        await windowManager.show();
+      }
+      await windowManager.focus();
+
+      _showNotification(
+        'Later App',
+        'Welcome back to Later!',
+      );
+    } catch (e) {
+      debugPrint('Error showing app: $e');
+    }
+  }
+
+  Future<void> _hideApp() async {
+    try {
+      await windowManager.hide();
+      // On macOS, this removes the app from the dock
+      if (Platform.isMacOS) {
+        await windowManager.setSkipTaskbar(true);
+      }
+    } catch (e) {
+      debugPrint('Error hiding app: $e');
+    }
+  }
+
+  Future<void> _exitApp() async {
+    try {
+      // Force close the app
+      await windowManager.destroy();
+    } catch (e) {
+      debugPrint('Error exiting app: $e');
+      exit(0); // Fallback to exit if window manager fails
+    }
+  }
+
+  void _showNotification(String title, String body) {
+    try {
+      LocalNotification notification = LocalNotification(
+        title: title,
+        body: body,
+      );
+      notification.show();
+    } catch (e) {
+      debugPrint('Error showing notification: $e');
+    }
   }
 
   Future<void> _importTabsFromClipboard() async {
@@ -86,6 +153,10 @@ class SystemTrayManager {
           if (jsonData.containsKey('urls') && jsonData.containsKey('exportedAt')) {
             final importData = ExportData.fromJson(jsonData);
             _ref.read(appNotifier.notifier).importData(importData);
+            _showNotification(
+              'URLs Imported',
+              'Imported ${importData.urls.length} URLs from clipboard',
+            );
             debugPrint('Imported ${importData.urls.length} URLs from clipboard');
           }
           // Check if it's from browser extension (just URLs array)
@@ -116,6 +187,10 @@ class SystemTrayManager {
               _ref.read(appNotifier.notifier).addUrl(url);
             }
 
+            _showNotification(
+              'URLs Imported',
+              'Imported ${urls.length} URLs from clipboard',
+            );
             debugPrint('Imported ${urls.length} URLs from clipboard');
           }
         } catch (e) {
@@ -128,6 +203,10 @@ class SystemTrayManager {
                     categoryId: _ref.read(appNotifier).categories.isNotEmpty ? _ref.read(appNotifier).categories.first.id : '',
                   ),
                 );
+            _showNotification(
+              'URL Imported',
+              'Imported URL from clipboard',
+            );
             debugPrint('Imported single URL from clipboard');
           } else {
             debugPrint('Clipboard content is not a valid URL or JSON: $e');
@@ -150,6 +229,10 @@ class SystemTrayManager {
       // Copy to clipboard
       await Clipboard.setData(ClipboardData(text: jsonString));
 
+      _showNotification(
+        'URLs Exported',
+        'Exported ${exportData.urls.length} URLs to clipboard',
+      );
       debugPrint('Exported ${exportData.urls.length} URLs to clipboard');
     } catch (e) {
       debugPrint('Error exporting URLs: $e');
