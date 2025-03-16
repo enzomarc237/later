@@ -49,23 +49,37 @@ Future<void> main() async {
   });
 
   // Handle initial URL if app was opened via URL scheme
+  // Only try to use uni_links if not on macOS, since it's primarily for mobile platforms
   try {
-    final initialLink = await getInitialLink();
-    if (initialLink != null) {
-      handleIncomingUrl(initialLink, container);
+    // On macOS, we rely on the MethodChannel for URL scheme handling
+    // This is just a fallback for other platforms
+    if (!Platform.isMacOS) {
+      final initialLink = await getInitialLink();
+      if (initialLink != null) {
+        handleIncomingUrl(initialLink, container);
+      }
     }
   } catch (e) {
-    debugPrint('Error handling initial link: $e');
+    // This is expected on macOS, so we just log it and continue
+    debugPrint('Note: uni_links initial link not available: $e');
   }
 
   // Listen for incoming links while app is running
-  linkStream.listen((String? link) {
-    if (link != null) {
-      handleIncomingUrl(link, container);
+  // Only try to use uni_links if not on macOS
+  if (!Platform.isMacOS) {
+    try {
+      linkStream.listen((String? link) {
+        if (link != null) {
+          handleIncomingUrl(link, container);
+        }
+      }, onError: (e) {
+        debugPrint('Note: uni_links stream not available: $e');
+      });
+    } catch (e) {
+      // This is expected on macOS, so we just log it and continue
+      debugPrint('Note: uni_links stream setup failed: $e');
     }
-  }, onError: (e) {
-    debugPrint('Error handling link stream: $e');
-  });
+  }
 
   runApp(
     ProviderScope(
