@@ -3,87 +3,121 @@
 ## 1. Data Models and State Management
 
 ### 1.1 Data Models
-- [ ] Create Category model
-- [ ] Create URL model
-- [ ] Create Settings model
+
+- [x] Create Category model
+- [x] Create URL model
+- [x] Create Settings model
+- [x] Create ExportData model for import/export functionality
 
 ### 1.2 State Management
-- [ ] Update AppState to include categories and selected category
-- [ ] Update SettingsState to include theme and data folder settings
-- [ ] Create CategoryNotifier for managing categories
-- [ ] Create URLNotifier for managing URLs
-- [ ] Update PreferencesRepository to store and retrieve categories and URLs
+
+- [x] Update AppState to include categories and selected category
+- [x] Update SettingsState to include theme and data folder settings
+- [x] Create CategoryNotifier for managing categories (implemented in AppNotifier)
+- [x] Create URLNotifier for managing URLs (implemented in AppNotifier)
+- [x] Update PreferencesRepository to store and retrieve categories and URLs
 
 ## 2. MacOS Application UI
 
 ### 2.1 Main Interface
-- [ ] Update MainView to display categories in sidebar
-- [ ] Implement search functionality in sidebar
-- [ ] Create "Create Category" button at bottom of sidebar
-- [ ] Implement URL list view in main content area
-- [ ] Implement search functionality for URLs
-- [ ] Create URL detail view/card component
+
+- [x] Update MainView to display categories in sidebar
+- [x] Implement search functionality in sidebar
+- [x] Create "Create Category" button at bottom of sidebar
+- [x] Implement URL list view in main content area
+- [x] Implement search functionality for URLs
+- [x] Create URL detail view/card component
+- [x] Add "All URLs" button to view URLs across all categories
+- [x] Refine sidebar spacing and navigation
 
 ### 2.2 Toolbar
-- [ ] Implement "Add URL" button and functionality
-- [ ] Implement "Export List" button and functionality
-- [ ] Implement "Import List" button and functionality
-- [ ] Implement "Go to Settings" button
+
+- [x] Implement "Add URL" button and functionality
+- [x] Implement "Export List" button and functionality
+- [x] Implement "Import List" button and functionality
+- [x] Implement "Go to Settings" button
 
 ### 2.3 Settings Page
-- [ ] Implement theme selection (Light/Dark)
-- [ ] Implement data folder selection
-- [ ] Implement "Clear All Data" functionality
-- [ ] Implement browser extensions setup instructions
+
+- [x] Implement theme selection (Light/Dark)
+- [x] Implement data folder selection
+- [x] Implement "Clear All Data" functionality
+- [x] Implement browser extensions setup instructions
 
 ### 2.4 System Tray
-- [ ] Implement system tray icon
-- [ ] Create context menu with options:
-  - [ ] Open App Main View
-  - [ ] Import Tabs from Clipboard
-  - [ ] Close App
-- [ ] Implement functionality for each option
+
+- [x] Implement system tray icon
+- [x] Create context menu with options:
+  - [x] Open App Main View
+  - [x] Import Tabs from Clipboard
+  - [x] Close App
+- [x] Implement functionality for each option
+- [x] Prevent app exit on window close (hide to system tray instead)
 
 ## 3. Browser Extensions
 
 ### 3.1 Chrome Extension
-- [ ] Create manifest.json file (Manifest V3)
-- [ ] Implement popup UI
-- [ ] Implement functionality to export:
-  - [ ] Currently opened tab
-  - [ ] All tabs in current window
-  - [ ] All tabs across all windows
-- [ ] Implement clipboard export functionality
+
+- [x] Create manifest.json file (Manifest V3)
+- [x] Implement popup UI
+- [x] Implement functionality to export:
+  - [x] Currently opened tab
+  - [x] All tabs in current window
+  - [x] All tabs across all windows
+- [x] Implement clipboard export functionality
+- [x] Add direct URL scheme communication with macOS app
 
 ### 3.2 Firefox Extension
-- [ ] Create manifest.json file (WebExtensions API)
-- [ ] Implement popup UI
-- [ ] Implement functionality to export:
-  - [ ] Currently opened tab
-  - [ ] All tabs in current window
-  - [ ] All tabs across all windows
-- [ ] Implement clipboard export functionality
+
+- [x] Create manifest.json file (WebExtensions API)
+- [x] Implement popup UI
+- [x] Implement functionality to export:
+  - [x] Currently opened tab
+  - [x] All tabs in current window
+  - [x] All tabs across all windows
+- [x] Implement clipboard export functionality
+- [x] Add direct URL scheme communication with macOS app
 
 ## 4. Integration and Testing
 
 ### 4.1 Integration
-- [ ] Ensure the macOS app can import URLs from clipboard
-- [ ] Test the workflow from exporting tabs to importing them
+
+- [x] Ensure the macOS app can import URLs from clipboard
+- [x] Test the workflow from exporting tabs to importing them
+- [x] Implement custom URL scheme for direct communication between extensions and app
 
 ### 4.2 Testing
-- [ ] Test category management
-- [ ] Test URL management
-- [ ] Test settings functionality
-- [ ] Test system tray functionality
-- [ ] Test browser extensions
+
+- [x] Test category management
+- [x] Test URL management
+- [x] Test settings functionality
+- [x] Test system tray functionality
+- [x] Test browser extensions
 
 ## 5. Polishing
 
 ### 5.1 UI Refinement
-- [ ] Ensure consistent styling across the app
-- [ ] Implement proper error handling and user feedback
-- [ ] Add animations and transitions for better UX
+
+- [x] Ensure consistent styling across the app
+- [x] Implement proper error handling and user feedback
+- [x] Add animations and transitions for better UX
+- [x] Add notifications for user actions
 
 ### 5.2 Performance Optimization
-- [ ] Optimize data loading and saving
-- [ ] Ensure smooth performance with large numbers of categories and URLs
+
+- [x] Optimize data loading and saving
+- [x] Ensure smooth performance with large numbers of categories and URLs
+
+## 6. Recent Enhancements
+
+### 6.1 UI Improvements
+
+- [x] Refined sidebar with better spacing and visual hierarchy
+- [x] Added "All URLs" button at the top of the sidebar
+- [x] Improved category selection and navigation
+
+### 6.2 System Integration
+
+- [x] Added window management to keep app running in background
+- [x] Implemented notifications for user actions
+- [x] Added custom URL scheme for direct communication with browser extensions
