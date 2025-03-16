@@ -1,13 +1,14 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart' hide Category;
 import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:system_tray/system_tray.dart';
-import 'package:window_manager/window_manager.dart';
 
-import '../models/models.dart';
+import '../models/category.dart';
+import '../models/export_data.dart';
+import '../models/url_item.dart';
 import '../providers/providers.dart';
 
 class SystemTrayManager {
@@ -61,14 +62,14 @@ class SystemTrayManager {
     });
   }
 
-  Future<void> _showApp() async {
-    try {
-      // Show and focus the window
-      await windowManager.show();
-      await windowManager.focus();
-    } catch (e) {
-      debugPrint('Error showing app: $e');
-    }
+  void _showApp() {
+    // This would typically use a platform channel or window_manager package to show the app
+    // For now, we'll just print a message
+    debugPrint("Show app - window_manager package needed for full implementation");
+
+    // TODO: Add window_manager package to dependencies and implement proper window showing:
+    // await windowManager.show();
+    // await windowManager.focus();
   }
 
   Future<void> _importTabsFromClipboard() async {
