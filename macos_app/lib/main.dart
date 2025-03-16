@@ -1,9 +1,12 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:macos_ui/macos_ui.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uni_links/uni_links.dart';
 
 import 'models/models.dart';
 import 'pages/main_view.dart';
@@ -27,12 +30,113 @@ Future<void> main() async {
   // Initialize system tray
   await container.read(systemTrayManagerProvider).initSystemTray();
 
+  // Set up method channel for URL scheme handling
+  const methodChannel = MethodChannel('com.later.app/url_scheme');
+  methodChannel.setMethodCallHandler((call) async {
+    if (call.method == 'handleUrl') {
+      final url = call.arguments as String;
+      handleIncomingUrl(url, container);
+    }
+    return null;
+  });
+
+  // Handle initial URL if app was opened via URL scheme
+  try {
+    final initialLink = await getInitialLink();
+    if (initialLink != null) {
+      handleIncomingUrl(initialLink, container);
+    }
+  } catch (e) {
+    debugPrint('Error handling initial link: $e');
+  }
+
+  // Listen for incoming links while app is running
+  linkStream.listen((String? link) {
+    if (link != null) {
+      handleIncomingUrl(link, container);
+    }
+  }, onError: (e) {
+    debugPrint('Error handling link stream: $e');
+  });
+
   runApp(
     ProviderScope(
       parent: container,
       child: const MainApp(),
     ),
   );
+}
+
+void handleIncomingUrl(String url, ProviderContainer container) {
+  debugPrint('Handling URL: $url');
+
+  try {
+    // Parse the URL
+    final uri = Uri.parse(url);
+
+    // Check if it's our custom scheme
+    if (uri.scheme == 'later') {
+      // Handle different paths
+      if (uri.path == '/add' || uri.path.isEmpty) {
+        // Extract URL data from query parameters
+        final urlToAdd = uri.queryParameters['url'];
+        final title = uri.queryParameters['title'] ?? 'Imported URL';
+        final description = uri.queryParameters['description'];
+        final categoryName = uri.queryParameters['category'];
+
+        if (urlToAdd != null) {
+          // Get the app notifier
+          final appNotifier = container.read(appNotifier.notifier);
+
+          // Find or create category if specified
+          String categoryId = '';
+          if (categoryName != null && categoryName.isNotEmpty) {
+            // Check if category exists
+            final categories = container.read(appNotifier).categories;
+            final existingCategory = categories.where((c) => c.name.toLowerCase() == categoryName.toLowerCase()).toList();
+
+            if (existingCategory.isNotEmpty) {
+              categoryId = existingCategory.first.id;
+            } else {
+              // Create new category
+              final newCategory = Category(name: categoryName);
+              appNotifier.addCategory(newCategory);
+              categoryId = newCategory.id;
+            }
+          } else if (container.read(appNotifier).categories.isNotEmpty) {
+            // Use first category if none specified
+            categoryId = container.read(appNotifier).categories.first.id;
+          }
+
+          // Create and add URL
+          final newUrl = UrlItem(
+            url: urlToAdd,
+            title: title,
+            description: description,
+            categoryId: categoryId,
+          );
+
+          appNotifier.addUrl(newUrl);
+          debugPrint('Added URL: $urlToAdd to category: $categoryName');
+        }
+      } else if (uri.path == '/import') {
+        // Handle bulk import
+        final jsonData = uri.queryParameters['data'];
+        if (jsonData != null) {
+          try {
+            final decodedData = jsonDecode(jsonData) as Map<String, dynamic>;
+            final importData = ExportData.fromJson(decodedData);
+            container.read(appNotifier.notifier).importData(importData);
+            debugPrint('Imported ${importData.urls.length} URLs and ${importData.categories.length} categories');
+          } catch (e) {
+            debugPrint('Error parsing import data: $e');
+          }
+        }
+      }
+    }
+  } catch (e) {
+    debugPrint('Error handling URL: $e');
+  }
 }
 
 class MainApp extends ConsumerWidget {
