@@ -3,10 +3,12 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:local_notifier/local_notifier.dart';
 import 'package:macos_ui/macos_ui.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uni_links/uni_links.dart';
+import 'package:window_manager/window_manager.dart';
 
 import 'models/models.dart';
 import 'pages/main_view.dart';
@@ -15,11 +17,16 @@ import 'utils/system_tray_manager.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize local notifier
+  await LocalNotifier.setup();
+
   final sharedPreferences = await SharedPreferences.getInstance();
   final pubspec = Pubspec.parse(await rootBundle.loadString('pubspec.yaml'));
   final version = pubspec.version;
   debugPrint('version from pubspec.yaml: $version');
   sharedPreferences.setString('appVersion', version.toString());
+
   // Create ProviderContainer to access providers before runApp
   final container = ProviderContainer(
     overrides: [
@@ -27,7 +34,7 @@ Future<void> main() async {
     ],
   );
 
-  // Initialize system tray
+  // Initialize system tray (which also initializes window_manager)
   await container.read(systemTrayManagerProvider).initSystemTray();
 
   // Set up method channel for URL scheme handling
@@ -118,6 +125,13 @@ void handleIncomingUrl(String url, ProviderContainer container) {
           );
 
           appNotifierRef.addUrl(newUrl);
+
+          // Show notification
+          LocalNotification(
+            title: 'URL Added',
+            body: 'Added URL: ${title.length > 30 ? title.substring(0, 27) + '...' : title}',
+          ).show();
+
           debugPrint('Added URL: $urlToAdd to category: $categoryName');
         }
       } else if (uri.path == '/import') {
@@ -128,6 +142,13 @@ void handleIncomingUrl(String url, ProviderContainer container) {
             final decodedData = jsonDecode(jsonData) as Map<String, dynamic>;
             final importData = ExportData.fromJson(decodedData);
             container.read(appNotifier.notifier).importData(importData);
+
+            // Show notification
+            LocalNotification(
+              title: 'URLs Imported',
+              body: 'Imported ${importData.urls.length} URLs and ${importData.categories.length} categories',
+            ).show();
+
             debugPrint('Imported ${importData.urls.length} URLs and ${importData.categories.length} categories');
           } catch (e) {
             debugPrint('Error parsing import data: $e');
