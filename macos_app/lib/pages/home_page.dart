@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -389,10 +392,10 @@ class _HomePageState extends ConsumerState<HomePage> {
     try {
       // Get export data from AppNotifier
       final exportData = ref.read(appNotifier.notifier).exportData();
-      
+
       // Convert to JSON
       final jsonString = jsonEncode(exportData.toJson());
-      
+
       // Get save location
       final saveLocation = await FilePicker.platform.saveFile(
         dialogTitle: 'Save URLs',
@@ -400,12 +403,12 @@ class _HomePageState extends ConsumerState<HomePage> {
         allowedExtensions: ['json'],
         type: FileType.custom,
       );
-      
+
       if (saveLocation != null) {
         // Write to file
         final file = File(saveLocation);
         await file.writeAsString(jsonString);
-        
+
         // Show success message
         _showSuccessDialog(context, 'Export Successful', 'URLs exported successfully.');
       }
@@ -423,32 +426,28 @@ class _HomePageState extends ConsumerState<HomePage> {
         allowedExtensions: ['json'],
         type: FileType.custom,
       );
-      
+
       if (result != null && result.files.single.path != null) {
         // Read file
         final file = File(result.files.single.path!);
         final jsonString = await file.readAsString();
-        
+
         // Parse JSON
         final jsonData = jsonDecode(jsonString) as Map<String, dynamic>;
         final importData = ExportData.fromJson(jsonData);
-        
+
         // Import data
         ref.read(appNotifier.notifier).importData(importData);
-        
+
         // Show success message
-        _showSuccessDialog(
-          context, 
-          'Import Successful', 
-          'Imported ${importData.urls.length} URLs and ${importData.categories.length} categories.'
-        );
+        _showSuccessDialog(context, 'Import Successful', 'Imported ${importData.urls.length} URLs and ${importData.categories.length} categories.');
       }
     } catch (e) {
       debugPrint('Error importing URLs: $e');
       _showErrorDialog(context, 'Import Failed', 'Failed to import URLs: $e');
     }
   }
-  
+
   void _showSuccessDialog(BuildContext context, String title, String message) {
     showMacosAlertDialog(
       context: context,
@@ -470,7 +469,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       ),
     );
   }
-  
+
   void _showErrorDialog(BuildContext context, String title, String message) {
     showMacosAlertDialog(
       context: context,
@@ -493,10 +492,6 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 }
-
-// Add missing imports at the top of the file
-import 'dart:convert';
-import 'dart:io';
 
 class MacosCard extends StatelessWidget {
   final Widget child;
