@@ -86,13 +86,14 @@ void handleIncomingUrl(String url, ProviderContainer container) {
 
         if (urlToAdd != null) {
           // Get the app notifier
-          final appNotifier = container.read(appNotifier.notifier);
+          final appState = container.read(appNotifier);
+          final appNotifierRef = container.read(appNotifier.notifier);
 
           // Find or create category if specified
           String categoryId = '';
           if (categoryName != null && categoryName.isNotEmpty) {
             // Check if category exists
-            final categories = container.read(appNotifier).categories;
+            final categories = appState.categories;
             final existingCategory = categories.where((c) => c.name.toLowerCase() == categoryName.toLowerCase()).toList();
 
             if (existingCategory.isNotEmpty) {
@@ -100,12 +101,12 @@ void handleIncomingUrl(String url, ProviderContainer container) {
             } else {
               // Create new category
               final newCategory = Category(name: categoryName);
-              appNotifier.addCategory(newCategory);
+              appNotifierRef.addCategory(newCategory);
               categoryId = newCategory.id;
             }
-          } else if (container.read(appNotifier).categories.isNotEmpty) {
+          } else if (appState.categories.isNotEmpty) {
             // Use first category if none specified
-            categoryId = container.read(appNotifier).categories.first.id;
+            categoryId = appState.categories.first.id;
           }
 
           // Create and add URL
@@ -116,7 +117,7 @@ void handleIncomingUrl(String url, ProviderContainer container) {
             categoryId: categoryId,
           );
 
-          appNotifier.addUrl(newUrl);
+          appNotifierRef.addUrl(newUrl);
           debugPrint('Added URL: $urlToAdd to category: $categoryName');
         }
       } else if (uri.path == '/import') {
