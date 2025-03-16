@@ -51,33 +51,34 @@ class _MainViewState extends ConsumerState<MainView> {
                 },
               ),
             ),
-            // All URLs button at the top
+            // All URLs button at the top - Simplified to ensure it's clickable
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: appState.selectedCategoryId == null ? MacosColors.controlAccentColor.withOpacity(0.2) : Colors.transparent,
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-                child: MacosListTile(
-                  // MacosListTile doesn't have contentPadding parameter
-                  leading: const MacosIcon(
-                    CupertinoIcons.doc_text_search,
-                    color: MacosColors.controlAccentColor,
-                    size: 22.0, // Slightly larger icon
-                  ),
-                  title: Text(
-                    'All URLs',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: appState.selectedCategoryId == null ? MacosColors.controlAccentColor : null,
+              child: PushButton(
+                controlSize: ControlSize.large,
+                secondary: true,
+                color: appState.selectedCategoryId == null ? MacosColors.controlAccentColor : null,
+                onPressed: () {
+                  ref.read(appNotifier.notifier).selectCategory(null);
+                  // Switch to HomePage
+                  setState(() => _pageIndex = 0);
+                },
+                child: Row(
+                  children: [
+                    MacosIcon(
+                      CupertinoIcons.doc_text_search,
+                      color: appState.selectedCategoryId == null ? MacosColors.controlAccentColor : MacosColors.systemGrayColor,
+                      size: 22.0,
                     ),
-                  ),
-                  onClick: () {
-                    ref.read(appNotifier.notifier).selectCategory(null);
-                    // Switch to HomePage
-                    setState(() => _pageIndex = 0);
-                  },
+                    const SizedBox(width: 8.0),
+                    Text(
+                      'All URLs',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: appState.selectedCategoryId == null ? MacosColors.controlAccentColor : MacosColors.systemGrayColor,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
