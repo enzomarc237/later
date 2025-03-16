@@ -45,8 +45,8 @@ class _MainViewState extends ConsumerState<MainView> {
             secondary: true,
             color: appState.selectedCategoryId == null ? MacosColors.controlAccentColor : null,
             onPressed: () {
-              // Explicitly call the selectCategory method with null to clear filters
-              ref.read(appNotifier.notifier).selectCategory(null);
+              // Use the explicit clearSelectedCategory method to ensure category is unselected
+              ref.read(appNotifier.notifier).clearSelectedCategory();
               // Force a rebuild to ensure UI updates
               setState(() {
                 _pageIndex = 0; // Switch to HomePage
