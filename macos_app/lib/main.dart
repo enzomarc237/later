@@ -5,6 +5,7 @@ import 'package:macos_ui/macos_ui.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'models/models.dart';
 import 'pages/main_view.dart';
 import 'providers/providers.dart';
 import 'utils/system_tray_manager.dart';
@@ -34,17 +35,19 @@ Future<void> main() async {
   );
 }
 
-class MainApp extends StatelessWidget {
+class MainApp extends ConsumerWidget {
   const MainApp({super.key});
 
   // This widget is the root of your application.
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(settingsNotifier);
+
     return MacosApp(
       title: 'Later',
       theme: MacosThemeData.light(),
       darkTheme: MacosThemeData.dark(),
-      themeMode: ThemeMode.system,
+      themeMode: settings.themeMode,
       home: const MainView(),
       debugShowCheckedModeBanner: false,
     );
