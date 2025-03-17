@@ -153,50 +153,76 @@ class SystemTrayManager with WindowListener {
           // Check if it's in our export format
           if (jsonData.containsKey('urls') && jsonData.containsKey('exportedAt')) {
             final importData = ExportData.fromJson(jsonData);
-            _ref.read(appNotifier.notifier).importData(importData);
-            _showNotification(
-              'URLs Imported',
-              'Imported ${importData.urls.length} URLs from clipboard',
+
+            // Show import dialog with the URLs
+            final selectedUrls = await DialogService.showImportUrlsDialog(
+              importData.urls,
+              initialCategoryName: importData.categories.isNotEmpty ? importData.categories.first.name : 'Imported',
             );
-            debugPrint('Imported ${importData.urls.length} URLs from clipboard');
+
+            if (selectedUrls != null && selectedUrls.isNotEmpty) {
+              // Import only the selected URLs
+              for (final url in selectedUrls) {
+                _ref.read(appNotifier.notifier).addUrl(url);
+              }
+
+              _showNotification(
+                'URLs Imported',
+                'Imported ${selectedUrls.length} URLs from clipboard',
+              );
+              debugPrint('Imported ${selectedUrls.length} URLs from clipboard');
+            } else {
+              debugPrint('Import cancelled or no URLs selected');
+            }
           }
           // Check if it's from browser extension (just URLs array)
           else if (jsonData.containsKey('urls')) {
-            final urls = (jsonData['urls'] as List).cast<Map<String, dynamic>>();
-
-            // Get default category or create one
+            final urlsData = (jsonData['urls'] as List).cast<Map<String, dynamic>>();
             final appState = _ref.read(appNotifier);
-            String categoryId;
 
-            if (appState.categories.isEmpty) {
-              // Create a default category
-              final defaultCategory = Category(name: 'Imported');
-              _ref.read(appNotifier.notifier).addCategory(defaultCategory);
-              categoryId = defaultCategory.id;
-            } else {
-              categoryId = appState.categories.first.id;
+            // Default category
+            String defaultCategoryName = 'Imported';
+            if (appState.categories.isNotEmpty) {
+              defaultCategoryName = appState.categories.first.name;
             }
 
-            // Import URLs
-            for (final urlData in urls) {
+            // Create URL items
+            final urls = <UrlItem>[];
+            for (final urlData in urlsData) {
               final url = UrlItem(
                 url: urlData['url'] as String,
                 title: urlData['title'] as String,
                 description: urlData['description'] as String?,
-                categoryId: categoryId,
+                categoryId: '', // Will be set by the dialog
               );
-              _ref.read(appNotifier.notifier).addUrl(url);
+              urls.add(url);
             }
 
-            _showNotification(
-              'URLs Imported',
-              'Imported ${urls.length} URLs from clipboard',
+            // Show import dialog
+            final selectedUrls = await DialogService.showImportUrlsDialog(
+              urls,
+              initialCategoryName: defaultCategoryName,
             );
-            debugPrint('Imported ${urls.length} URLs from clipboard');
+
+            if (selectedUrls != null && selectedUrls.isNotEmpty) {
+              // Import only the selected URLs
+              for (final url in selectedUrls) {
+                _ref.read(appNotifier.notifier).addUrl(url);
+              }
+
+              _showNotification(
+                'URLs Imported',
+                'Imported ${selectedUrls.length} URLs from clipboard',
+              );
+              debugPrint('Imported ${selectedUrls.length} URLs from clipboard');
+            } else {
+              debugPrint('Import cancelled or no URLs selected');
+            }
           }
         } catch (e) {
           // If not valid JSON, just import as a single URL
           if (text.startsWith('http')) {
+            // For single URLs, we don't show the dialog
             _ref.read(appNotifier.notifier).addUrl(
                   UrlItem(
                     url: text,
