@@ -168,14 +168,6 @@ document.addEventListener("DOMContentLoaded", function () {
         }
       });
     });
-
-    // Try to open with Later app using URL scheme
-    openWithLaterApp(exportData, tabs.length).then((success) => {
-      if (!success) {
-        // Fallback to clipboard if URL scheme fails
-        copyToClipboard(exportData, tabs.length);
-      }
-    });
   }
 
   function openWithLaterApp(exportData, tabCount) {
