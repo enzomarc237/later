@@ -188,6 +188,7 @@ class MainApp extends ConsumerWidget {
     final settings = ref.watch(settingsNotifier);
 
     return MacosApp(
+      navigatorKey: DialogService.navigatorKey,
       title: 'Later',
       theme: MacosThemeData().copyWith(
         primaryColor: Colors.grey.shade800,
