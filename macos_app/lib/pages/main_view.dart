@@ -32,6 +32,7 @@ class _MainViewState extends ConsumerState<MainView> {
     final filteredCategories = appState.categories.where((category) => _searchQuery.isEmpty || category.name.toLowerCase().contains(_searchQuery.toLowerCase())).toList();
 
     return MacosWindow(
+      backgroundColor: MacosColors.transparent,
       sidebar: Sidebar(
         decoration: BoxDecoration(
           color: MacosTheme.of(context).canvasColor,
@@ -119,15 +120,31 @@ class _MainViewState extends ConsumerState<MainView> {
                               color: isSelected ? MacosColors.controlAccentColor.withOpacity(0.2) : Colors.transparent,
                               borderRadius: BorderRadius.circular(8.0), // Rounded corners
                             ),
-                            child: MacosListTile(
-                              // MacosListTile doesn't have contentPadding parameter
-                              leading: const MacosIcon(CupertinoIcons.folder),
-                              title: Text(category.name),
-                              onClick: () {
-                                ref.read(appNotifier.notifier).selectCategory(category.id);
-                                // Switch to HomePage when a category is selected
-                                setState(() => _pageIndex = 0);
-                              },
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: MacosListTile(
+                                    // MacosListTile doesn't have contentPadding parameter
+                                    leading: const MacosIcon(CupertinoIcons.folder),
+                                    title: Text(category.name),
+                                    onClick: () {
+                                      ref.read(appNotifier.notifier).selectCategory(category.id);
+                                      // Switch to HomePage when a category is selected
+                                      setState(() => _pageIndex = 0);
+                                    },
+                                  ),
+                                ),
+                                MacosIconButton(
+                                  icon: const MacosIcon(
+                                    CupertinoIcons.pencil,
+                                    size: 16,
+                                  ),
+                                  padding: const EdgeInsets.only(right: 8.0),
+                                  onPressed: () {
+                                    _showEditCategoryDialog(context, category);
+                                  },
+                                ),
+                              ],
                             ),
                           ),
                         );
