@@ -9,7 +9,6 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:local_notifier/local_notifier.dart';
 import 'package:macos_ui/macos_ui.dart';
 import 'package:url_launcher/url_launcher.dart';
-
 import '../models/models.dart';
 import '../providers/providers.dart';
 
@@ -175,6 +174,12 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   Widget _buildUrlCard(BuildContext context, UrlItem url) {
+    final appState = ref.watch(appNotifier);
+    // String category = 'Uknnown';
+    // appState.categories.forEach((categ) {
+    //   if (categ.id.toLowerCase() == url.categoryId)
+    // })
+
     return MacosCard(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -228,32 +233,37 @@ class _HomePageState extends ConsumerState<HomePage> {
             ],
             const SizedBox(height: 16),
             Row(
-              mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                PushButton(
-                  controlSize: ControlSize.small,
-                  secondary: true,
-                  onPressed: () {
-                    _copyUrlToClipboard(context, url.url);
-                  },
-                  child: const Text('Copy'),
-                ),
-                const SizedBox(width: 8),
-                PushButton(
-                  controlSize: ControlSize.small,
-                  secondary: true,
-                  onPressed: () {
-                    _showUrlPreview(context, url);
-                  },
-                  child: const Text('Preview'),
-                ),
-                const SizedBox(width: 8),
-                PushButton(
-                  controlSize: ControlSize.small,
-                  onPressed: () {
-                    _openUrlInBrowser(context, url.url);
-                  },
-                  child: const Text('Open'),
+                Text("Category: ${appState.categories.first.name}"),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    PushButton(
+                      controlSize: ControlSize.small,
+                      secondary: true,
+                      onPressed: () {
+                        _copyUrlToClipboard(context, url.url);
+                      },
+                      child: const Text('Copy'),
+                    ),
+                    const SizedBox(width: 8),
+                    PushButton(
+                      controlSize: ControlSize.small,
+                      secondary: true,
+                      onPressed: () {
+                        _showUrlPreview(context, url);
+                      },
+                      child: const Text('Preview'),
+                    ),
+                    const SizedBox(width: 8),
+                    PushButton(
+                      controlSize: ControlSize.small,
+                      onPressed: () {
+                        _openUrlInBrowser(context, url.url);
+                      },
+                      child: const Text('Open'),
+                    ),
+                  ],
                 ),
               ],
             ),
