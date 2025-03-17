@@ -15,6 +15,7 @@ import 'package:window_manager/window_manager.dart';
 import 'models/models.dart';
 import 'pages/main_view.dart';
 import 'providers/providers.dart';
+import 'utils/dialog_service.dart';
 import 'utils/system_tray_manager.dart';
 
 Future<void> main() async {
