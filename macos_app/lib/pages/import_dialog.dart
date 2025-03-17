@@ -102,7 +102,7 @@ class _ImportUrlsDialogState extends ConsumerState<ImportUrlsDialog> {
           ConstrainedBox(
             constraints: const BoxConstraints(
               maxHeight: 600,
-              maxWidth: 800,
+              maxWidth: 1200,
             ),
             child: MacosScrollbar(
               child: ListView.builder(
