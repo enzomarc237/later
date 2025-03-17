@@ -185,9 +185,13 @@ document.addEventListener("DOMContentLoaded", function () {
         };
 
         // Try to open with Later app using URL scheme
-        return openWithLaterApp(exportData, tabs.length);
+        return {
+          exportData,
+          promise: openWithLaterApp(exportData, tabs.length),
+        };
       })
-      .then((success) => {
+      .then((result) => {
+        const { exportData, promise: success } = result;
         if (!success) {
           // Fallback to clipboard if URL scheme fails
           copyToClipboard(exportData, tabs.length);
@@ -195,15 +199,15 @@ document.addEventListener("DOMContentLoaded", function () {
       })
       .catch((error) => {
         console.error("Error in saveTabsToLater:", error);
-        // Try to get the exportData from the error context if possible
-        const exportData = error.exportData || {
+        // Create a fallback export data if we couldn't get it from the previous steps
+        const fallbackExportData = {
           urls: urlItems,
           categories: [],
           version: "1.0.0",
           exportedAt: new Date().toISOString(),
         };
         // Fallback to clipboard if URL scheme fails
-        copyToClipboard(exportData, tabs.length);
+        copyToClipboard(fallbackExportData, tabs.length);
       });
   }
 
