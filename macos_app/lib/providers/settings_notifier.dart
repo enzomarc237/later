@@ -49,7 +49,7 @@ class SettingsNotifier extends Notifier<Settings> {
     await _preferencesRepository.clearAllData();
 
     // Also clear the app state
-    ref.read(appNotifier.notifier).clearData();
+    await ref.read(appNotifier.notifier).clearData();
   }
 
   Future<void> _saveSettings() async {
