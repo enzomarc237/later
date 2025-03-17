@@ -152,7 +152,7 @@ class _ImportUrlsDialogState extends ConsumerState<ImportUrlsDialog> {
                                   url.description!,
                                   style: MacosTheme.of(context).typography.body,
                                   overflow: TextOverflow.ellipsis,
-                                  maxLines: 3,
+                                  maxLines: 2,
                                 ),
                               ],
                             ],
