@@ -611,16 +611,39 @@ class _HomePageState extends ConsumerState<HomePage> {
         final jsonData = jsonDecode(jsonString) as Map<String, dynamic>;
         final importData = ExportData.fromJson(jsonData);
 
-        // Import data
-        ref.read(appNotifier.notifier).importData(importData);
+        // Get default category name if available
+        String initialCategoryName = '';
+        if (importData.categories.isNotEmpty) {
+          initialCategoryName = importData.categories.first.name;
+        }
+
+        // Show import dialog to let user select URLs and category
+        final selectedUrls = await showImportUrlsDialog(
+          context,
+          importData.urls,
+          initialCategoryName: initialCategoryName,
+        );
+
+        // If user canceled, do nothing
+        if (selectedUrls == null || selectedUrls.isEmpty) {
+          return;
+        }
+
+        // Import selected URLs
+        final appNotifierRef = ref.read(appNotifier.notifier);
+
+        // Add each URL
+        for (final url in selectedUrls) {
+          appNotifierRef.addUrl(url);
+        }
 
         // Show success message
-        _showSuccessDialog(context, 'Import Successful', 'Imported ${importData.urls.length} URLs and ${importData.categories.length} categories.');
+        _showSuccessDialog(context, 'Import Successful', 'Imported ${selectedUrls.length} URLs.');
 
         // Show notification
         LocalNotification(
           title: 'Import Successful',
-          body: 'Imported ${importData.urls.length} URLs and ${importData.categories.length} categories',
+          body: 'Imported ${selectedUrls.length} URLs',
         ).show();
       }
     } catch (e) {
