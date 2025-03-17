@@ -11,6 +11,7 @@ import 'package:macos_ui/macos_ui.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/models.dart';
 import '../providers/providers.dart';
+import 'import_dialog.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   final VoidCallback? onSettingsPressed;
