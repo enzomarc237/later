@@ -247,4 +247,49 @@ class _MainViewState extends ConsumerState<MainView> {
       ),
     );
   }
+
+  void _showEditCategoryDialog(BuildContext context, Category category) {
+    final TextEditingController controller = TextEditingController(text: category.name);
+    showMacosAlertDialog(
+      context: context,
+      builder: (_) => MacosAlertDialog(
+        appIcon: const MacosIcon(
+          CupertinoIcons.folder,
+          size: 56,
+          color: MacosColors.systemBlueColor,
+        ),
+        title: const Text('Edit Category'),
+        message: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16.0),
+          child: MacosTextField(
+            placeholder: 'Category Name',
+            controller: controller,
+          ),
+        ),
+        primaryButton: PushButton(
+          controlSize: ControlSize.large,
+          onPressed: () {
+            final newName = controller.text.trim();
+            if (newName.isNotEmpty) {
+              // Only update if the name has changed
+              if (newName != category.name) {
+                final updatedCategory = category.copyWith(name: newName);
+                ref.read(appNotifier.notifier).updateCategory(updatedCategory);
+              }
+              Navigator.of(context).pop();
+            }
+          },
+          child: const Text('Save'),
+        ),
+        secondaryButton: PushButton(
+          controlSize: ControlSize.large,
+          secondary: true,
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          child: const Text('Cancel'),
+        ),
+      ),
+    );
+  }
 }
