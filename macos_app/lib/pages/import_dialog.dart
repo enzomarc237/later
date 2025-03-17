@@ -135,13 +135,24 @@ class _ImportUrlsDialogState extends ConsumerState<ImportUrlsDialog> {
                                 overflow: TextOverflow.ellipsis,
                                 maxLines: 1,
                               ),
+                              const SizedBox(height: 4),
                               Text(
                                 url.url,
-                                style: MacosTheme.of(context).typography.caption1.copyWith(
+                                style: MacosTheme.of(context).typography.body.copyWith(
                                       color: MacosColors.systemBlueColor,
                                     ),
                                 overflow: TextOverflow.ellipsis,
+                                maxLines: 2,
                               ),
+                              if (url.description != null && url.description!.isNotEmpty) ...[
+                                const SizedBox(height: 4),
+                                Text(
+                                  url.description!,
+                                  style: MacosTheme.of(context).typography.caption1,
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 2,
+                                ),
+                              ],
                             ],
                           ),
                         ),
