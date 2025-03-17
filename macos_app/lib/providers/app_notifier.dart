@@ -171,13 +171,17 @@ class AppNotifier extends Notifier<AppState> {
   }
 
   // Data management
-  void clearData() {
+  Future<void> clearData() async {
     state = state.copyWith(
       categories: [],
       urls: [],
       clearSelectedCategory: true,
       message: 'data_cleared',
     );
+
+    // Persist the empty lists to storage
+    await _saveCategories();
+    await _saveUrls();
   }
 
   // Import/Export
