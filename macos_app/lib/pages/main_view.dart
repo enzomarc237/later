@@ -66,10 +66,10 @@ class _MainViewState extends ConsumerState<MainView> {
                 const SizedBox(width: 8.0),
                 Text(
                   'All URLs',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: appState.selectedCategoryId == null ? MacosColors.controlAccentColor : MacosColors.systemGrayColor,
-                  ),
+                  style: MacosTheme.of(context).typography.body.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: appState.selectedCategoryId == null ? MacosColors.controlAccentColor : MacosColors.systemGrayColor,
+                      ),
                 ),
               ],
             ),
@@ -90,15 +90,14 @@ class _MainViewState extends ConsumerState<MainView> {
               ),
             ),
             const SizedBox(height: 8.0), // Extra spacing
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.0),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Text(
                 'Categories',
-                style: TextStyle(
-                  fontSize: 12.0,
-                  fontWeight: FontWeight.bold,
-                  color: MacosColors.systemGrayColor,
-                ),
+                style: MacosTheme.of(context).typography.subheadline.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: MacosColors.systemGrayColor,
+                    ),
               ),
             ),
             const SizedBox(height: 8.0), // Extra spacing
@@ -216,7 +215,11 @@ class _MainViewState extends ConsumerState<MainView> {
     showMacosAlertDialog(
       context: context,
       builder: (_) => MacosAlertDialog(
-        appIcon: const FlutterLogo(size: 56),
+        appIcon: const MacosIcon(
+          CupertinoIcons.folder_badge_plus,
+          size: 56,
+          color: MacosColors.systemBlueColor,
+        ),
         title: const Text('Create New Category'),
         message: Padding(
           padding: const EdgeInsets.symmetric(vertical: 16.0),
