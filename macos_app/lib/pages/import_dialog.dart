@@ -216,11 +216,9 @@ class _ImportUrlsDialogState extends ConsumerState<ImportUrlsDialog> {
           // Find or create category
           String categoryId = '';
           final appNotifierRef = ref.read(appNotifier.notifier);
-          
+
           // Check if category exists
-          final existingCategory = appState.categories
-              .where((c) => c.name.toLowerCase() == categoryName.toLowerCase())
-              .toList();
+          final existingCategory = appState.categories.where((c) => c.name.toLowerCase() == categoryName.toLowerCase()).toList();
 
           if (existingCategory.isNotEmpty) {
             categoryId = existingCategory.first.id;
@@ -256,7 +254,7 @@ Future<List<UrlItem>?> showImportUrlsDialog(
   List<UrlItem> urls, {
   String initialCategoryName = '',
 }) async {
-  return await showMacosDialog<List<UrlItem>>(
+  return await showMacosAlertDialog<List<UrlItem>>(
     context: context,
     builder: (_) => ImportUrlsDialog(
       urls: urls,
