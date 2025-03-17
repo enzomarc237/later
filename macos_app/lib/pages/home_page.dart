@@ -407,7 +407,11 @@ class _HomePageState extends ConsumerState<HomePage> {
     showMacosAlertDialog(
       context: context,
       builder: (_) => MacosAlertDialog(
-        appIcon: const FlutterLogo(size: 56),
+        appIcon: const MacosIcon(
+          CupertinoIcons.link_badge_plus,
+          size: 56,
+          color: MacosColors.systemBlueColor,
+        ),
         title: const Text('Add URL'),
         message: Column(
           mainAxisSize: MainAxisSize.min,
@@ -578,7 +582,11 @@ class _HomePageState extends ConsumerState<HomePage> {
     showMacosAlertDialog(
       context: context,
       builder: (_) => MacosAlertDialog(
-        appIcon: const FlutterLogo(size: 56),
+        appIcon: const MacosIcon(
+          CupertinoIcons.trash,
+          size: 56,
+          color: MacosColors.systemRedColor,
+        ),
         title: const Text('Delete URL'),
         message: Text('Are you sure you want to delete "${url.title}"?'),
         primaryButton: PushButton(
