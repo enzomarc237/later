@@ -150,9 +150,9 @@ class _ImportUrlsDialogState extends ConsumerState<ImportUrlsDialog> {
                                 const SizedBox(height: 4),
                                 Text(
                                   url.description!,
-                                  style: MacosTheme.of(context).typography.caption1,
+                                  style: MacosTheme.of(context).typography.body,
                                   overflow: TextOverflow.ellipsis,
-                                  maxLines: 2,
+                                  maxLines: 3,
                                 ),
                               ],
                             ],
