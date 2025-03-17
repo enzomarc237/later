@@ -13,6 +13,7 @@ import '../models/category.dart';
 import '../models/export_data.dart';
 import '../models/url_item.dart';
 import '../providers/providers.dart';
+import 'dialog_service.dart';
 
 class SystemTrayManager with WindowListener {
   final SystemTray _systemTray = SystemTray();
