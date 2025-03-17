@@ -144,7 +144,7 @@ class _ImportUrlsDialogState extends ConsumerState<ImportUrlsDialog> {
                                       color: MacosColors.systemBlueColor,
                                     ),
                                 overflow: TextOverflow.ellipsis,
-                                maxLines: 2,
+                                maxLines: 3,
                               ),
                               if (url.description != null && url.description!.isNotEmpty) ...[
                                 const SizedBox(height: 4),
