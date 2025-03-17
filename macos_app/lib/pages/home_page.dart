@@ -521,32 +521,21 @@ class _HomePageState extends ConsumerState<HomePage> {
               if (categories.isEmpty)
                 const Text('No categories available')
               else
-                Container(
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: MacosTheme.brightnessOf(context) == Brightness.dark ? Colors.grey.shade800 : Colors.grey.shade300,
-                    ),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: DropdownButton<String>(
-                    value: selectedCategoryId,
-                    isExpanded: true,
-                    underline: const SizedBox(), // Remove the default underline
-                    items: categories.map((category) {
-                      return DropdownMenuItem<String>(
-                        value: category.id,
-                        child: Text(category.name),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      if (value != null) {
-                        setState(() {
-                          selectedCategoryId = value;
-                        });
-                      }
-                    },
-                  ),
+                MacosPopupButton<String>(
+                  value: selectedCategoryId,
+                  items: categories.map((category) {
+                    return MacosPopupMenuItem<String>(
+                      value: category.id,
+                      child: Text(category.name),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() {
+                        selectedCategoryId = value;
+                      });
+                    }
+                  },
                 ),
             ],
           ),
