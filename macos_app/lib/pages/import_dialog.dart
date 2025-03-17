@@ -129,10 +129,11 @@ class _ImportUrlsDialogState extends ConsumerState<ImportUrlsDialog> {
                             children: [
                               Text(
                                 url.title,
-                                style: MacosTheme.of(context).typography.body.copyWith(
+                                style: MacosTheme.of(context).typography.title3.copyWith(
                                       fontWeight: FontWeight.bold,
                                     ),
                                 overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
                               ),
                               Text(
                                 url.url,
