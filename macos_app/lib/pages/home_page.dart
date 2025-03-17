@@ -241,10 +241,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                         (cat) => cat.id == url.categoryId,
                         orElse: () => Category(id: 'unknown', name: 'Unknown'),
                       ).name}",
-                  style: TextStyle(
-                    fontSize: 12.0,
-                    color: Colors.grey,
-                  ),
+                  style: MacosTheme.of(context).typography.caption1.copyWith(
+                        color: MacosColors.systemGrayColor,
+                      ),
                 ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
