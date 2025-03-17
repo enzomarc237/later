@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' hide Category;
 import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:local_notifier/local_notifier.dart';
@@ -187,8 +188,19 @@ class MainApp extends ConsumerWidget {
 
     return MacosApp(
       title: 'Later',
-      theme: MacosThemeData.light(),
-      darkTheme: MacosThemeData.dark(),
+      theme: MacosThemeData().copyWith(
+        primaryColor: Colors.grey.shade800,
+        iconButtonTheme: MacosIconButtonThemeData(
+          disabledColor: Colors.grey.shade800,
+        ),
+      ),
+      darkTheme: MacosThemeData.dark().copyWith(
+        primaryColor: Colors.white,
+        iconButtonTheme: const MacosIconButtonThemeData(
+          disabledColor: Colors.white,
+        ),
+      ),
+      color: MacosColors.transparent,
       themeMode: settings.themeMode,
       home: const MainView(),
       debugShowCheckedModeBanner: false,
