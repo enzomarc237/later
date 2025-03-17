@@ -170,6 +170,16 @@ class AppNotifier extends Notifier<AppState> {
     _saveUrls();
   }
 
+  // Data management
+  void clearData() {
+    state = state.copyWith(
+      categories: [],
+      urls: [],
+      clearSelectedCategory: true,
+      message: 'data_cleared',
+    );
+  }
+
   // Import/Export
   ExportData exportData() {
     return ExportData(
