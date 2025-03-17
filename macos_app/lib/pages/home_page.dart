@@ -234,8 +234,18 @@ class _HomePageState extends ConsumerState<HomePage> {
             ],
             const SizedBox(height: 16),
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text("Category: ${appState.categories.first.name}"),
+                Text(
+                  "Category: ${appState.categories.firstWhere(
+                        (cat) => cat.id == url.categoryId,
+                        orElse: () => Category(id: 'unknown', name: 'Unknown'),
+                      ).name}",
+                  style: TextStyle(
+                    fontSize: 12.0,
+                    color: Colors.grey,
+                  ),
+                ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
@@ -276,6 +286,7 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   void _showUrlPreview(BuildContext context, UrlItem url) {
     showMacosAlertDialog(
+      barrierDismissible: true,
       context: context,
       builder: (_) => MacosAlertDialog(
         appIcon: const MacosIcon(
@@ -462,62 +473,114 @@ class _HomePageState extends ConsumerState<HomePage> {
     final urlController = TextEditingController(text: url.url);
     final descriptionController = TextEditingController(text: url.description ?? '');
 
+    // Get all categories from app state
+    final appState = ref.read(appNotifier);
+    final categories = appState.categories;
+
+    // Set initial selected category
+    String selectedCategoryId = url.categoryId;
+
     showMacosAlertDialog(
       context: context,
-      builder: (_) => MacosAlertDialog(
-        appIcon: const FlutterLogo(size: 56),
-        title: const Text('Edit URL'),
-        message: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 16),
-            MacosTextField(
-              placeholder: 'Title',
-              controller: titleController,
-            ),
-            const SizedBox(height: 8),
-            MacosTextField(
-              placeholder: 'URL',
-              controller: urlController,
-            ),
-            const SizedBox(height: 8),
-            MacosTextField(
-              placeholder: 'Description (optional)',
-              controller: descriptionController,
-              maxLines: 3,
-            ),
-          ],
-        ),
-        primaryButton: PushButton(
-          controlSize: ControlSize.large,
-          onPressed: () {
-            if (titleController.text.trim().isNotEmpty && urlController.text.trim().isNotEmpty) {
-              final updatedUrl = url.copyWith(
-                url: urlController.text.trim(),
-                title: titleController.text.trim(),
-                description: descriptionController.text.trim().isNotEmpty ? descriptionController.text.trim() : null,
-              );
-              ref.read(appNotifier.notifier).updateUrl(updatedUrl);
+      builder: (_) => StatefulBuilder(
+        builder: (context, setState) => MacosAlertDialog(
+          appIcon: const MacosIcon(
+            CupertinoIcons.link,
+            size: 56,
+            color: MacosColors.systemBlueColor,
+          ),
+          title: const Text('Edit URL'),
+          message: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 16),
+              MacosTextField(
+                placeholder: 'Title',
+                controller: titleController,
+              ),
+              const SizedBox(height: 8),
+              MacosTextField(
+                placeholder: 'URL',
+                controller: urlController,
+              ),
+              const SizedBox(height: 8),
+              MacosTextField(
+                placeholder: 'Description (optional)',
+                controller: descriptionController,
+                maxLines: 3,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Category:',
+                style: MacosTheme.of(context).typography.subheadline.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+              const SizedBox(height: 8),
+              if (categories.isEmpty)
+                const Text('No categories available')
+              else
+                Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: MacosTheme.brightnessOf(context) == Brightness.dark ? Colors.grey.shade800 : Colors.grey.shade300,
+                    ),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: DropdownButton<String>(
+                    value: selectedCategoryId,
+                    isExpanded: true,
+                    underline: const SizedBox(), // Remove the default underline
+                    items: categories.map((category) {
+                      return DropdownMenuItem<String>(
+                        value: category.id,
+                        child: Text(category.name),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      if (value != null) {
+                        setState(() {
+                          selectedCategoryId = value;
+                        });
+                      }
+                    },
+                  ),
+                ),
+            ],
+          ),
+          primaryButton: PushButton(
+            controlSize: ControlSize.large,
+            onPressed: () {
+              if (titleController.text.trim().isNotEmpty && urlController.text.trim().isNotEmpty) {
+                final updatedUrl = url.copyWith(
+                  url: urlController.text.trim(),
+                  title: titleController.text.trim(),
+                  description: descriptionController.text.trim().isNotEmpty ? descriptionController.text.trim() : null,
+                  categoryId: selectedCategoryId,
+                );
+                ref.read(appNotifier.notifier).updateUrl(updatedUrl);
 
-              // Show notification
-              LocalNotification(
-                title: 'URL Updated',
-                body: 'Updated URL: ${updatedUrl.title.length > 30 ? updatedUrl.title.substring(0, 27) + '...' : updatedUrl.title}',
-              ).show();
+                // Show notification
+                LocalNotification(
+                  title: 'URL Updated',
+                  body: 'Updated URL: ${updatedUrl.title.length > 30 ? updatedUrl.title.substring(0, 27) + '...' : updatedUrl.title}',
+                ).show();
 
+                Navigator.of(context).pop();
+              }
+            },
+            child: const Text('Save'),
+          ),
+          secondaryButton: PushButton(
+            controlSize: ControlSize.large,
+            secondary: true,
+            onPressed: () {
               Navigator.of(context).pop();
-            }
-          },
-          child: const Text('Save'),
-        ),
-        secondaryButton: PushButton(
-          controlSize: ControlSize.large,
-          secondary: true,
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-          child: const Text('Cancel'),
+            },
+            child: const Text('Cancel'),
+          ),
         ),
       ),
     );
