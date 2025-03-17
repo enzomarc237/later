@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart' hide Category;
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:local_notifier/local_notifier.dart';
@@ -42,10 +43,10 @@ class SystemTrayManager with WindowListener {
     // Create context menu items
     List<MenuItem> items = [
       MenuItem(
-        label: 'Open Later',
+        label: 'Open Later App',
         onClicked: () => _showApp(),
       ),
-      MenuItem(label: '-'), // Separator
+      MenuItem(label: ''),
       MenuItem(
         label: 'Import Tabs from Clipboard',
         onClicked: () => _importTabsFromClipboard(),
@@ -54,7 +55,6 @@ class SystemTrayManager with WindowListener {
         label: 'Export All URLs',
         onClicked: () => _exportAllUrls(),
       ),
-      MenuItem(label: '-'), // Separator
       MenuItem(
         label: 'Exit',
         onClicked: () => _exitApp(),
