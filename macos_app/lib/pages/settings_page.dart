@@ -304,7 +304,11 @@ class SettingsPage extends ConsumerWidget {
     showMacosAlertDialog(
       context: context,
       builder: (_) => MacosAlertDialog(
-        appIcon: const FlutterLogo(size: 56),
+        appIcon: const MacosIcon(
+          CupertinoIcons.trash,
+          size: 56,
+          color: MacosColors.systemRedColor,
+        ),
         title: const Text('Clear All Data'),
         message: const Text(
           'Are you sure you want to clear all data? This will delete all categories and URLs and cannot be undone.',
