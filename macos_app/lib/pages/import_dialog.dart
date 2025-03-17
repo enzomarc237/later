@@ -70,10 +70,12 @@ class _ImportUrlsDialogState extends ConsumerState<ImportUrlsDialog> {
                   fontWeight: FontWeight.bold,
                 ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           MacosTextField(
-            placeholder: 'Enter category name',
+            placeholder: 'Enter category name (required)',
             controller: _categoryController,
+            maxLines: 1,
+            style: MacosTheme.of(context).typography.title3,
           ),
           const SizedBox(height: 16),
           Row(
