@@ -160,16 +160,33 @@ document.addEventListener("DOMContentLoaded", function () {
       };
     });
 
-    // Create export data format
-    const exportData = {
-      urls: urlItems,
-      categories: [],
-      version: "1.0.0",
-      exportedAt: new Date().toISOString(),
-    };
+    // Get categories from storage and include them in the export data
+    browser.storage.sync
+      .get("categories")
+      .then((data) => {
+        const categories = data.categories || [];
 
-    // Try to open with Later app using URL scheme
-    openWithLaterApp(exportData, tabs.length)
+        // Format categories to match the expected format in the macOS app
+        const formattedCategories = categories.map((category) => {
+          return {
+            id: category.id,
+            name: category.name,
+            createdAt: category.createdAt || new Date().toISOString(),
+            updatedAt: category.updatedAt || new Date().toISOString(),
+          };
+        });
+
+        // Create export data format with categories
+        const exportData = {
+          urls: urlItems,
+          categories: formattedCategories,
+          version: "1.0.0",
+          exportedAt: new Date().toISOString(),
+        };
+
+        // Try to open with Later app using URL scheme
+        return openWithLaterApp(exportData, tabs.length);
+      })
       .then((success) => {
         if (!success) {
           // Fallback to clipboard if URL scheme fails
@@ -177,7 +194,14 @@ document.addEventListener("DOMContentLoaded", function () {
         }
       })
       .catch((error) => {
-        console.error("Error opening with Later app:", error);
+        console.error("Error in saveTabsToLater:", error);
+        // Try to get the exportData from the error context if possible
+        const exportData = error.exportData || {
+          urls: urlItems,
+          categories: [],
+          version: "1.0.0",
+          exportedAt: new Date().toISOString(),
+        };
         // Fallback to clipboard if URL scheme fails
         copyToClipboard(exportData, tabs.length);
       });
