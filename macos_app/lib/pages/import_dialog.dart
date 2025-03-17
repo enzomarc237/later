@@ -109,7 +109,7 @@ class _ImportUrlsDialogState extends ConsumerState<ImportUrlsDialog> {
                 itemBuilder: (context, index) {
                   final url = widget.urls[index];
                   return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4.0),
+                    padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
                     child: Row(
                       children: [
                         MacosCheckbox(
