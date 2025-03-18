@@ -289,11 +289,35 @@ class _HomePageState extends ConsumerState<HomePage> {
               ],
             ),
             const SizedBox(height: 8),
-            Text(
-              url.url,
-              style: MacosTheme.of(context).typography.body.copyWith(
-                    color: MacosColors.systemBlueColor,
+            Row(
+              children: [
+                Container(
+                  width: 12,
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: url.status.color,
+                    shape: BoxShape.circle,
                   ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    url.url,
+                    style: MacosTheme.of(context).typography.body.copyWith(
+                          color: MacosColors.systemBlueColor,
+                        ),
+                  ),
+                ),
+                if (url.lastChecked != null) ...[
+                  const SizedBox(width: 8),
+                  Text(
+                    'Checked: ${_formatDate(url.lastChecked!)}',
+                    style: MacosTheme.of(context).typography.caption2.copyWith(
+                          color: MacosColors.systemGrayColor,
+                        ),
+                  ),
+                ],
+              ],
             ),
             if (url.description != null && url.description!.isNotEmpty) ...[
               const SizedBox(height: 8),
