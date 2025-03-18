@@ -121,3 +121,55 @@
 - [x] Added window management to keep app running in background
 - [x] Implemented notifications for user actions
 - [x] Added custom URL scheme for direct communication with browser extensions
+
+## 7. Future Enhancements
+
+### 7.1 Data Storage Improvements
+
+- [ ] Implement file-based storage using the data folder path setting
+- [ ] Add migration from SharedPreferences to file-based storage
+- [ ] Add automatic backups of user data
+- [ ] Implement data import/export in various formats (JSON, HTML, CSV)
+- [ ] Add cloud sync capabilities (iCloud, Dropbox, etc.)
+
+### 7.2 URL Management Enhancements
+
+- [ ] Add advanced search and filtering capabilities
+- [ ] Implement bulk operations (select multiple URLs to delete or move)
+- [ ] Add drag-and-drop for organizing URLs between categories
+- [ ] Implement auto-categorization based on URL patterns or content
+- [ ] Add URL validation to check for dead links
+- [ ] Auto-fetch favicons and metadata from websites
+- [ ] Add preview thumbnails for URLs
+
+### 7.3 Organization Features
+
+- [ ] Implement a tagging system in addition to categories
+- [ ] Add tag suggestions based on URL content
+- [ ] Create smart collections based on rules (domains, keywords, etc.)
+- [ ] Add favorites/starred items functionality
+- [ ] Implement a "recently added" or "recently viewed" section
+
+### 7.4 UI Improvements
+
+- [ ] Add customizable themes beyond just light/dark
+- [ ] Implement keyboard shortcuts for power users
+- [ ] Add list and grid view options for URLs
+- [ ] Make sidebar width adjustable
+- [ ] Add more sorting options for URLs (alphabetical, date added, most used)
+- [ ] Implement a reading mode for article URLs
+
+### 7.5 Browser Integration Enhancements
+
+- [ ] Improve browser extensions with more features
+- [ ] Add right-click context menu integration
+- [ ] Implement browser bookmark sync
+- [ ] Add web clipper functionality to save article content
+- [ ] Create a browser sidebar extension for quick access
+
+### 7.6 Analytics and Insights
+
+- [ ] Add usage statistics (most visited links, categories with most items)
+- [ ] Implement visualizations of bookmark collection
+- [ ] Add time-based analytics (saving patterns, usage patterns)
+- [ ] Create reports on bookmark organization and suggestions
