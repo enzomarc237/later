@@ -36,6 +36,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   Widget build(BuildContext context) {
     final appState = ref.watch(appNotifier);
     final selectedCategoryId = appState.selectedCategoryId;
+    final selectionMode = appState.selectionMode;
 
     // Get the selected category name
     final selectedCategory = selectedCategoryId != null
@@ -67,45 +68,13 @@ class _HomePageState extends ConsumerState<HomePage> {
             MacosWindowScope.of(context).toggleSidebar();
           },
         ),
-        title: Text(selectedCategory.name),
+        title: selectionMode 
+          ? Text('${appState.selectedUrlCount} selected') 
+          : Text(selectedCategory.name),
         titleWidth: 250,
-        actions: [
-          ToolBarIconButton(
-            label: 'Add URL',
-            icon: const MacosIcon(CupertinoIcons.add_circled),
-            onPressed: () {
-              _showAddUrlDialog(context, selectedCategoryId);
-            },
-            showLabel: true,
-          ),
-          ToolBarIconButton(
-            label: 'Export List',
-            icon: const MacosIcon(CupertinoIcons.arrow_up_doc),
-            onPressed: () {
-              _exportUrls(context);
-            },
-            showLabel: true,
-          ),
-          ToolBarIconButton(
-            label: 'Import List',
-            icon: const MacosIcon(CupertinoIcons.arrow_down_doc),
-            onPressed: () {
-              _importUrls(context);
-            },
-            showLabel: true,
-          ),
-          ToolBarIconButton(
-            label: 'Settings',
-            icon: const MacosIcon(CupertinoIcons.gear),
-            onPressed: () {
-              // Navigate to settings page
-              if (widget.onSettingsPressed != null) {
-                widget.onSettingsPressed!();
-              }
-            },
-            showLabel: true,
-          ),
-        ],
+        actions: selectionMode
+          ? _buildSelectionModeActions(context, appState)
+          : _buildNormalModeActions(context, selectedCategoryId),
       ),
       children: [
         ContentArea(
@@ -114,14 +83,36 @@ class _HomePageState extends ConsumerState<HomePage> {
               children: [
                 Padding(
                   padding: const EdgeInsets.all(16.0),
-                  child: MacosSearchField(
-                    placeholder: 'Search URLs',
-                    controller: _searchController,
-                    onChanged: (value) {
-                      setState(() {
-                        _searchQuery = value;
-                      });
-                    },
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: MacosSearchField(
+                          placeholder: 'Search URLs',
+                          controller: _searchController,
+                          onChanged: (value) {
+                            setState(() {
+                              _searchQuery = value;
+                            });
+                          },
+                        ),
+                      ),
+                      if (filteredUrls.isNotEmpty) ...[
+                        const SizedBox(width: 16),
+                        PushButton(
+                          controlSize: ControlSize.regular,
+                          secondary: true,
+                          onPressed: () {
+                            final appNotifierRef = ref.read(appNotifier.notifier);
+                            if (appState.selectionMode) {
+                              appNotifierRef.toggleSelectionMode();
+                            } else {
+                              appNotifierRef.toggleSelectionMode();
+                            }
+                          },
+                          child: Text(appState.selectionMode ? 'Cancel' : 'Select'),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
                 Expanded(
@@ -161,7 +152,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                                 horizontal: 16.0,
                                 vertical: 8.0,
                               ),
-                              child: _buildUrlCard(context, url),
+                              child: _buildUrlCard(context, url, appState),
                             );
                           },
                         ),
@@ -174,7 +165,81 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-  Widget _buildUrlCard(BuildContext context, UrlItem url) {
+  // Build actions for normal mode (no selection)
+  List<Widget> _buildNormalModeActions(BuildContext context, String? selectedCategoryId) {
+    return [
+      ToolBarIconButton(
+        label: 'Add URL',
+        icon: const MacosIcon(CupertinoIcons.add_circled),
+        onPressed: () {
+          _showAddUrlDialog(context, selectedCategoryId);
+        },
+        showLabel: true,
+      ),
+      ToolBarIconButton(
+        label: 'Export List',
+        icon: const MacosIcon(CupertinoIcons.arrow_up_doc),
+        onPressed: () {
+          _exportUrls(context);
+        },
+        showLabel: true,
+      ),
+      ToolBarIconButton(
+        label: 'Import List',
+        icon: const MacosIcon(CupertinoIcons.arrow_down_doc),
+        onPressed: () {
+          _importUrls(context);
+        },
+        showLabel: true,
+      ),
+      ToolBarIconButton(
+        label: 'Settings',
+        icon: const MacosIcon(CupertinoIcons.gear),
+        onPressed: () {
+          // Navigate to settings page
+          if (widget.onSettingsPressed != null) {
+            widget.onSettingsPressed!();
+          }
+        },
+        showLabel: true,
+      ),
+    ];
+  }
+
+  // Build actions for selection mode
+  List<Widget> _buildSelectionModeActions(BuildContext context, AppState appState) {
+    final appNotifierRef = ref.read(appNotifier.notifier);
+    final hasSelections = appState.selectedUrlCount > 0;
+    
+    return [
+      ToolBarIconButton(
+        label: 'Select All',
+        icon: const MacosIcon(CupertinoIcons.checkmark_circle),
+        onPressed: () {
+          appNotifierRef.selectAllVisibleUrls();
+        },
+        showLabel: true,
+      ),
+      ToolBarIconButton(
+        label: 'Delete',
+        icon: const MacosIcon(CupertinoIcons.trash),
+        onPressed: hasSelections ? () {
+          _showDeleteSelectedUrlsDialog(context);
+        } : null,
+        showLabel: true,
+      ),
+      ToolBarIconButton(
+        label: 'Move',
+        icon: const MacosIcon(CupertinoIcons.folder),
+        onPressed: hasSelections ? () {
+          _showMoveSelectedUrlsDialog(context);
+        } : null,
+        showLabel: true,
+      ),
+    ];
+  }
+
+  Widget _buildUrlCard(BuildContext context, UrlItem url, AppState appState) {
     final appState = ref.watch(appNotifier);
     // String category = 'Uknnown';
     // appState.categories.forEach((categ) {
@@ -190,6 +255,15 @@ class _HomePageState extends ConsumerState<HomePage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
+                if (appState.selectionMode) ...[
+                  MacosCheckbox(
+                    value: appState.isUrlSelected(url.id),
+                    onChanged: (value) {
+                      ref.read(appNotifier.notifier).toggleUrlSelection(url.id);
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                ],
                 Expanded(
                   child: Text(
                     url.title,
@@ -197,22 +271,24 @@ class _HomePageState extends ConsumerState<HomePage> {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                Row(
-                  children: [
-                    MacosIconButton(
-                      icon: const MacosIcon(CupertinoIcons.pencil),
-                      onPressed: () {
-                        _showEditUrlDialog(context, url);
-                      },
-                    ),
-                    const SizedBox(width: 8),
-                    MacosIconButton(
-                      icon: const MacosIcon(CupertinoIcons.trash),
-                      onPressed: () {
-                        _showDeleteUrlDialog(context, url);
-                      },
-                    ),
-                  ],
+                if (!appState.selectionMode) ...[
+                  Row(
+                    children: [
+                      MacosIconButton(
+                        icon: const MacosIcon(CupertinoIcons.pencil),
+                        onPressed: () {
+                          _showEditUrlDialog(context, url);
+                        },
+                      ),
+                      const SizedBox(width: 8),
+                      MacosIconButton(
+                        icon: const MacosIcon(CupertinoIcons.trash),
+                        onPressed: () {
+                          _showDeleteUrlDialog(context, url);
+                        },
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -245,35 +321,37 @@ class _HomePageState extends ConsumerState<HomePage> {
                         color: MacosColors.systemGrayColor,
                       ),
                 ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    PushButton(
-                      controlSize: ControlSize.small,
-                      secondary: true,
-                      onPressed: () {
-                        _copyUrlToClipboard(context, url.url);
-                      },
-                      child: const Text('Copy'),
-                    ),
-                    const SizedBox(width: 8),
-                    PushButton(
-                      controlSize: ControlSize.small,
-                      secondary: true,
-                      onPressed: () {
-                        _showUrlPreview(context, url);
-                      },
-                      child: const Text('Preview'),
-                    ),
-                    const SizedBox(width: 8),
-                    PushButton(
-                      controlSize: ControlSize.small,
-                      onPressed: () {
-                        _openUrlInBrowser(context, url.url);
-                      },
-                      child: const Text('Open'),
-                    ),
-                  ],
+                if (!appState.selectionMode) ...[
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      PushButton(
+                        controlSize: ControlSize.small,
+                        secondary: true,
+                        onPressed: () {
+                          _copyUrlToClipboard(context, url.url);
+                        },
+                        child: const Text('Copy'),
+                      ),
+                      const SizedBox(width: 8),
+                      PushButton(
+                        controlSize: ControlSize.small,
+                        secondary: true,
+                        onPressed: () {
+                          _showUrlPreview(context, url);
+                        },
+                        child: const Text('Preview'),
+                      ),
+                      const SizedBox(width: 8),
+                      PushButton(
+                        controlSize: ControlSize.small,
+                        onPressed: () {
+                          _openUrlInBrowser(context, url.url);
+                        },
+                        child: const Text('Open'),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -283,6 +361,126 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
+  // Show dialog to confirm deletion of selected URLs
+  void _showDeleteSelectedUrlsDialog(BuildContext context) {
+    final appState = ref.read(appNotifier);
+    final count = appState.selectedUrlCount;
+    
+    showMacosAlertDialog(
+      context: context,
+      builder: (_) => MacosAlertDialog(
+        appIcon: const MacosIcon(
+          CupertinoIcons.trash,
+          size: 56,
+          color: MacosColors.systemRedColor,
+        ),
+        title: const Text('Delete Selected URLs'),
+        message: Text('Are you sure you want to delete $count selected URLs? This action cannot be undone.'),
+        primaryButton: PushButton(
+          controlSize: ControlSize.large,
+          onPressed: () {
+            ref.read(appNotifier.notifier).deleteSelectedUrls();
+            
+            // Show notification
+            LocalNotification(
+              title: 'URLs Deleted',
+              body: 'Deleted $count URLs',
+            ).show();
+            
+            Navigator.of(context).pop();
+          },
+          child: const Text('Delete'),
+        ),
+        secondaryButton: PushButton(
+          controlSize: ControlSize.large,
+          secondary: true,
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          child: const Text('Cancel'),
+        ),
+      ),
+    );
+  }
+  
+  // Show dialog to move selected URLs to a category
+  void _showMoveSelectedUrlsDialog(BuildContext context) {
+    final appState = ref.read(appNotifier);
+    final count = appState.selectedUrlCount;
+    final categories = appState.categories;
+    
+    // Default to first category or empty string if no categories
+    String selectedCategoryId = categories.isNotEmpty ? categories.first.id : '';
+    
+    showMacosAlertDialog(
+      context: context,
+      builder: (_) => StatefulBuilder(
+        builder: (context, setState) => MacosAlertDialog(
+          appIcon: const MacosIcon(
+            CupertinoIcons.folder,
+            size: 56,
+            color: MacosColors.systemBlueColor,
+          ),
+          title: const Text('Move Selected URLs'),
+          message: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Select a category to move $count URLs to:'),
+              const SizedBox(height: 16),
+              if (categories.isEmpty)
+                const Text('No categories available. Please create a category first.')
+              else
+                MacosPopupButton<String>(
+                  value: selectedCategoryId,
+                  items: categories.map((category) {
+                    return MacosPopupMenuItem<String>(
+                      value: category.id,
+                      child: Text(category.name),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() {
+                        selectedCategoryId = value;
+                      });
+                    }
+                  },
+                ),
+            ],
+          ),
+          primaryButton: PushButton(
+            controlSize: ControlSize.large,
+            onPressed: categories.isEmpty ? null : () {
+              ref.read(appNotifier.notifier).moveSelectedUrlsToCategory(selectedCategoryId);
+              
+              // Show notification
+              final categoryName = categories.firstWhere(
+                (cat) => cat.id == selectedCategoryId,
+                orElse: () => Category(id: 'unknown', name: 'Unknown'),
+              ).name;
+              
+              LocalNotification(
+                title: 'URLs Moved',
+                body: 'Moved $count URLs to "$categoryName"',
+              ).show();
+              
+              Navigator.of(context).pop();
+            },
+            child: const Text('Move'),
+          ),
+          secondaryButton: PushButton(
+            controlSize: ControlSize.large,
+            secondary: true,
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: const Text('Cancel'),
+          ),
+        ),
+      ),
+    );
+  }
   void _showUrlPreview(BuildContext context, UrlItem url) {
     showMacosAlertDialog(
       barrierDismissible: true,
