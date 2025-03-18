@@ -335,6 +335,183 @@ class AppNotifier extends Notifier<AppState> {
     _saveUrls();
   }
 
+  // URL validation methods
+
+  /// Validates a single URL and updates its status
+  Future<UrlStatus> validateUrl(String urlId) async {
+    final index = state.urls.indexWhere((u) => u.id == urlId);
+    if (index < 0) return UrlStatus.error;
+
+    final url = state.urls[index];
+    final status = await _urlValidator.validateUrl(url.url);
+
+    // Update the URL with the new status
+    final updatedUrl = url.copyWith(
+      status: status,
+      lastChecked: DateTime.now(),
+    );
+
+    final updatedUrls = [...state.urls];
+    updatedUrls[index] = updatedUrl;
+
+    state = state.copyWith(urls: updatedUrls);
+    _saveUrls();
+
+    return status;
+  }
+
+  /// Validates all URLs in the app
+  Future<Map<String, UrlStatus>> validateAllUrls() async {
+    if (state.urls.isEmpty) return {};
+
+    state = state.copyWith(isLoading: true);
+
+    final results = <String, UrlStatus>{};
+    final updatedUrls = [...state.urls];
+    final now = DateTime.now();
+
+    for (int i = 0; i < updatedUrls.length; i++) {
+      final url = updatedUrls[i];
+      final status = await _urlValidator.validateUrl(url.url);
+
+      updatedUrls[i] = url.copyWith(
+        status: status,
+        lastChecked: now,
+      );
+
+      results[url.id] = status;
+    }
+
+    state = state.copyWith(
+      urls: updatedUrls,
+      isLoading: false,
+    );
+
+    _saveUrls();
+
+    return results;
+  }
+
+  /// Validates all URLs in a specific category
+  Future<Map<String, UrlStatus>> validateCategoryUrls(String categoryId) async {
+    final categoryUrls = state.urls.where((u) => u.categoryId == categoryId).toList();
+    if (categoryUrls.isEmpty) return {};
+
+    state = state.copyWith(isLoading: true);
+
+    final results = <String, UrlStatus>{};
+    final updatedUrls = [...state.urls];
+    final now = DateTime.now();
+
+    for (int i = 0; i < updatedUrls.length; i++) {
+      final url = updatedUrls[i];
+      if (url.categoryId != categoryId) continue;
+
+      final status = await _urlValidator.validateUrl(url.url);
+
+      updatedUrls[i] = url.copyWith(
+        status: status,
+        lastChecked: now,
+      );
+
+      results[url.id] = status;
+    }
+
+    state = state.copyWith(
+      urls: updatedUrls,
+      isLoading: false,
+    );
+
+    _saveUrls();
+
+    return results;
+  }
+
+  /// Validates all currently visible URLs (based on selected category)
+  Future<Map<String, UrlStatus>> validateVisibleUrls() async {
+    final visibleUrls = state.visibleUrls;
+    if (visibleUrls.isEmpty) return {};
+
+    state = state.copyWith(isLoading: true);
+
+    final results = <String, UrlStatus>{};
+    final updatedUrls = [...state.urls];
+    final now = DateTime.now();
+    final visibleIds = visibleUrls.map((u) => u.id).toSet();
+
+    for (int i = 0; i < updatedUrls.length; i++) {
+      final url = updatedUrls[i];
+      if (!visibleIds.contains(url.id)) continue;
+
+      final status = await _urlValidator.validateUrl(url.url);
+
+      updatedUrls[i] = url.copyWith(
+        status: status,
+        lastChecked: now,
+      );
+
+      results[url.id] = status;
+    }
+
+    state = state.copyWith(
+      urls: updatedUrls,
+      isLoading: false,
+    );
+
+    _saveUrls();
+
+    return results;
+  }
+
+  /// Validates selected URLs
+  Future<Map<String, UrlStatus>> validateSelectedUrls() async {
+    if (state.selectedUrlIds.isEmpty) return {};
+
+    state = state.copyWith(isLoading: true);
+
+    final results = <String, UrlStatus>{};
+    final updatedUrls = [...state.urls];
+    final now = DateTime.now();
+
+    for (int i = 0; i < updatedUrls.length; i++) {
+      final url = updatedUrls[i];
+      if (!state.selectedUrlIds.contains(url.id)) continue;
+
+      final status = await _urlValidator.validateUrl(url.url);
+
+      updatedUrls[i] = url.copyWith(
+        status: status,
+        lastChecked: now,
+      );
+
+      results[url.id] = status;
+    }
+
+    state = state.copyWith(
+      urls: updatedUrls,
+      isLoading: false,
+    );
+
+    _saveUrls();
+
+    return results;
+  }
+
+  /// Returns a list of invalid URLs (dead links)
+  List<UrlItem> getInvalidUrls() {
+    return state.urls.where((url) => url.status.isInvalid).toList();
+  }
+
+  /// Returns a list of valid URLs
+  List<UrlItem> getValidUrls() {
+    return state.urls.where((url) => url.status.isValid).toList();
+  }
+
+  /// Returns a list of URLs that haven't been validated yet
+  List<UrlItem> getUnvalidatedUrls() {
+    return state.urls.where((url) => url.status.isUnknown).toList();
+  }
+
   // Data management
   Future<void> clearData() async {
     state = state.copyWith(
