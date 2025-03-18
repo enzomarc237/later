@@ -72,10 +72,15 @@ class AppState {
 
 class AppNotifier extends Notifier<AppState> {
   late PreferencesRepository _preferencesRepository;
+  late BackupService _backupService;
+
+  // Settings for automatic backups
+  bool _autoBackupEnabled = true;
 
   @override
   AppState build() {
     _preferencesRepository = ref.read(preferencesRepositoryProvider);
+    _backupService = ref.read(backupServiceProvider);
 
     // Load initial state
     final initialState = AppState(
@@ -90,6 +95,40 @@ class AppNotifier extends Notifier<AppState> {
     _loadData();
 
     return initialState;
+  }
+
+  // Backup management
+  Future<String?> createBackup({String? backupName}) async {
+    final settings = await _preferencesRepository.getSettings();
+    return _backupService.createBackup(
+      categories: state.categories,
+      urls: state.urls,
+      settings: settings,
+      backupName: backupName,
+    );
+  }
+
+  Future<List<BackupInfo>> listBackups() async {
+    return _backupService.listBackups();
+  }
+
+  Future<bool> restoreBackup(String backupFileName) async {
+    final result = await _backupService.restoreBackup(backupFileName);
+    if (result) {
+      // Reload data from storage after restore
+      await _loadData();
+      return true;
+    }
+    return false;
+  }
+
+  Future<bool> deleteBackup(String backupFileName) async {
+    return _backupService.deleteBackup(backupFileName);
+  }
+
+  // Toggle automatic backups
+  void setAutoBackup(bool enabled) {
+    _autoBackupEnabled = enabled;
   }
 
   void setCurrentDirectory({required String directoryPath}) {
