@@ -183,12 +183,52 @@ class SettingsPage extends ConsumerWidget {
               onPressed: () async {
                 final selectedDirectory = await FilePicker.platform.getDirectoryPath();
                 if (selectedDirectory != null) {
-                  ref.read(settingsNotifier.notifier).setDataFolderPath(selectedDirectory);
+                  // Test if the directory is accessible
+                  final testFile = File('$selectedDirectory/.write_test');
+                  try {
+                    await testFile.writeAsString('test');
+                    await testFile.delete();
+
+                    // Directory is accessible, set it
+                    ref.read(settingsNotifier.notifier).setDataFolderPath(selectedDirectory);
+                  } catch (e) {
+                    // Directory is not accessible, show warning
+                    if (context.mounted) {
+                      showMacosAlertDialog(
+                        context: context,
+                        builder: (_) => MacosAlertDialog(
+                          appIcon: const MacosIcon(
+                            CupertinoIcons.exclamationmark_triangle,
+                            size: 56,
+                            color: MacosColors.systemOrangeColor,
+                          ),
+                          title: const Text('Permission Error'),
+                          message: Text(
+                            'The app does not have permission to access the selected folder:\n\n$selectedDirectory\n\nThe app will use the default location instead. To use a custom location, please select a folder that the app has permission to access, such as a folder within your Documents directory.',
+                          ),
+                          primaryButton: PushButton(
+                            controlSize: ControlSize.large,
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                            },
+                            child: const Text('OK'),
+                          ),
+                        ),
+                      );
+                    }
+                  }
                 }
               },
               child: const Text('Choose Folder'),
             ),
           ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Note: The app needs full access to the selected folder. If you experience permission issues, try selecting a folder within your Documents directory.',
+          style: MacosTheme.of(context).typography.caption1.copyWith(
+                color: MacosColors.systemGrayColor,
+              ),
         ),
       ],
     );
