@@ -152,7 +152,7 @@
 
 ### 7.4 UI Improvements
 
-- [ ] Add customizable themes beyond just light/dark
+- [x] Add customizable themes beyond just light/dark
 - [x] Implement keyboard shortcuts for power users
 - [ ] Add list and grid view options for URLs
 - [ ] Make sidebar width adjustable
