@@ -153,7 +153,7 @@
 ### 7.4 UI Improvements
 
 - [ ] Add customizable themes beyond just light/dark
-- [ ] Implement keyboard shortcuts for power users
+- [x] Implement keyboard shortcuts for power users
 - [ ] Add list and grid view options for URLs
 - [ ] Make sidebar width adjustable
 - [ ] Add more sorting options for URLs (alphabetical, date added, most used)
