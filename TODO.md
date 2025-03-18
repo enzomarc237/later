@@ -128,7 +128,7 @@
 
 - [x] Implement file-based storage using the data folder path setting
 - [x] Add migration from SharedPreferences to file-based storage
-- [ ] Add automatic backups of user data
+- [x] Add automatic backups of user data
 - [ ] Implement data import/export in various formats (JSON, HTML, CSV)
 - [ ] Add cloud sync capabilities (iCloud, Dropbox, etc.)
 
