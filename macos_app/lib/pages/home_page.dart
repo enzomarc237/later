@@ -1008,9 +1008,107 @@ class _HomePageState extends ConsumerState<HomePage> {
     return formatter.format(dateTime);
   }
 
+  // Validate all visible URLs
+  Future<void> _validateVisibleUrls(BuildContext context) async {
+    final appState = ref.read(appNotifier);
+    final visibleUrls = appState.visibleUrls;
+
+    if (visibleUrls.isEmpty) return;
+
+    // Show loading dialog
+    bool isCancelled = false;
+    showMacosAlertDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => MacosAlertDialog(
+        appIcon: const MacosIcon(
+          CupertinoIcons.checkmark_shield,
+          size: 56,
+          color: MacosColors.systemBlueColor,
+        ),
+        title: const Text('Validating URLs'),
+        message: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 16),
+            const ProgressCircle(),
+            const SizedBox(height: 16),
+            Text('Checking ${visibleUrls.length} URLs...'),
+          ],
+        ),
+        primaryButton: PushButton(
+          controlSize: ControlSize.large,
+          onPressed: () {
+            isCancelled = true;
+            Navigator.of(context).pop();
+          },
+          child: const Text('Cancel'),
+        ),
+      ),
+    );
+
+    // Validate all visible URLs
+    if (!isCancelled) {
+      final results = await ref.read(appNotifier.notifier).validateVisibleUrls();
+
+      // Close the loading dialog
+      if (context.mounted) {
+        Navigator.of(context).pop();
+      }
+
+      // Show results
+      if (context.mounted && !isCancelled) {
+        int validCount = 0;
+        int invalidCount = 0;
+        int errorCount = 0;
+
+        results.forEach((_, status) {
+          if (status.isValid) {
+            validCount++;
+          } else if (status.isInvalid) {
+            invalidCount++;
+          } else {
+            errorCount++;
+          }
+        });
+
+        showMacosAlertDialog(
+          context: context,
+          builder: (_) => MacosAlertDialog(
+            appIcon: const MacosIcon(
+              CupertinoIcons.checkmark_shield,
+              size: 56,
+              color: MacosColors.systemBlueColor,
+            ),
+            title: const Text('Validation Results'),
+            message: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Validated ${results.length} URLs:'),
+                const SizedBox(height: 8),
+                Text('• $validCount valid URLs', style: TextStyle(color: MacosColors.systemGreenColor)),
+                Text('• $invalidCount invalid URLs', style: TextStyle(color: MacosColors.systemRedColor)),
+                if (errorCount > 0) Text('• $errorCount URLs with errors', style: TextStyle(color: MacosColors.systemOrangeColor)),
+              ],
+            ),
+            primaryButton: PushButton(
+              controlSize: ControlSize.large,
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('OK'),
+            ),
+          ),
+        );
+      }
+    }
+  }
+
   // Validate a URL and show the result
   Future<void> _validateUrl(BuildContext context, UrlItem url) async {
     // Show loading dialog
+    bool isCancelled = false;
     showMacosAlertDialog(
       context: context,
       barrierDismissible: false,
@@ -1029,6 +1127,14 @@ class _HomePageState extends ConsumerState<HomePage> {
             const SizedBox(height: 16),
             Text('Checking if "${url.title}" is accessible...'),
           ],
+        ),
+        primaryButton: PushButton(
+          controlSize: ControlSize.large,
+          onPressed: () {
+            isCancelled = true;
+            Navigator.of(context).pop();
+          },
+          child: const Text('Cancel'),
         ),
       ),
     );
