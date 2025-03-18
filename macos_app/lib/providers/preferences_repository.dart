@@ -145,6 +145,7 @@ class PreferencesRepository {
   // Check if data migration is needed
   Future<bool> _shouldMigrateData() async {
     if (!_useFileStorage) return false;
+    if (_migrationPerformed) return false; // Skip if migration already performed
 
     // Check if files already exist
     final categoriesExist = await _fileStorage!.fileExists('categories.json');
@@ -159,28 +160,46 @@ class PreferencesRepository {
   Future<void> _migrateDataToFiles() async {
     if (!_useFileStorage) return;
 
+    // Set flag before migration to prevent recursive calls
+    _migrationPerformed = true;
+
     try {
       debugPrint('Migrating data to files...');
 
+      // Get data directly from SharedPreferences to avoid recursive calls
+      final categoriesJson = _prefs.getStringList('categories') ?? [];
+      final urlsJson = _prefs.getStringList('urls') ?? [];
+      final settingsJson = _prefs.getString('settings');
+
       // Migrate categories
-      final categories = await getCategories();
-      if (categories.isNotEmpty) {
-        final categoriesJson = categories.map((category) => category.toJson()).toList();
-        await _fileStorage!.writeJsonListFile('categories.json', categoriesJson);
+      if (categoriesJson.isNotEmpty) {
+        final categories = categoriesJson.map((json) => Category.fromJson(jsonDecode(json) as Map<String, dynamic>)).toList();
+        final categoriesJsonList = categories.map((category) => category.toJson()).toList();
+        await _fileStorage!.writeJsonListFile('categories.json', categoriesJsonList);
+      } else {
+        // Create empty file
+        await _fileStorage!.writeJsonListFile('categories.json', []);
       }
 
       // Migrate URLs
-      final urls = await getUrls();
-      if (urls.isNotEmpty) {
-        final urlsJson = urls.map((url) => url.toJson()).toList();
-        await _fileStorage!.writeJsonListFile('urls.json', urlsJson);
+      if (urlsJson.isNotEmpty) {
+        final urls = urlsJson.map((json) => UrlItem.fromJson(jsonDecode(json) as Map<String, dynamic>)).toList();
+        final urlsJsonList = urls.map((url) => url.toJson()).toList();
+        await _fileStorage!.writeJsonListFile('urls.json', urlsJsonList);
+      } else {
+        // Create empty file
+        await _fileStorage!.writeJsonListFile('urls.json', []);
       }
 
       // Migrate settings
-      final settings = await getSettings();
-      await _fileStorage!.writeJsonFile('settings.json', settings.toJson());
+      if (settingsJson != null) {
+        final settings = Settings.fromJson(jsonDecode(settingsJson) as Map<String, dynamic>);
+        await _fileStorage!.writeJsonFile('settings.json', settings.toJson());
+      } else {
+        // Create empty settings file
+        await _fileStorage!.writeJsonFile('settings.json', Settings().toJson());
+      }
 
-      _migrationPerformed = true;
       debugPrint('Data migration completed successfully.');
     } catch (e) {
       debugPrint('Error migrating data to files: $e');
