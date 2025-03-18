@@ -300,6 +300,13 @@ class AppNotifier extends Notifier<AppState> {
   Future<void> _createAutomaticBackup() async {
     try {
       final settings = await _preferencesRepository.getSettings();
+
+      // Update the BackupService's maxBackups setting
+      _backupService = BackupService(
+        fileStorage: ref.read(fileStorageServiceProvider),
+        maxBackups: settings.maxBackups,
+      );
+
       await _backupService.createBackup(
         categories: state.categories,
         urls: state.urls,
