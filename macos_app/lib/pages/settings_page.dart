@@ -807,6 +807,118 @@ class SettingsPage extends ConsumerWidget {
     return keyLabels[key] ?? key.keyLabel;
   }
 
+  Widget _buildCustomThemeSelector(BuildContext context, WidgetRef ref, Settings settings) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Custom Themes',
+          style: MacosTheme.of(context).typography.headline,
+        ),
+        const SizedBox(height: 8),
+
+        // Toggle for using custom themes
+        Row(
+          children: [
+            MacosCheckbox(
+              value: settings.useCustomTheme,
+              onChanged: (value) {
+                ref.read(settingsNotifier.notifier).setUseCustomTheme(value);
+              },
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'Use custom theme',
+              style: MacosTheme.of(context).typography.body,
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+
+        // Theme grid (only shown when custom themes are enabled)
+        if (settings.useCustomTheme) ...[
+          Text(
+            'Select a theme:',
+            style: MacosTheme.of(context).typography.body,
+          ),
+          const SizedBox(height: 8),
+
+          // Grid of theme options
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: ThemeOption.predefinedThemes.map((theme) {
+              final isSelected = theme.id == settings.customThemeId;
+
+              return GestureDetector(
+                onTap: () {
+                  ref.read(settingsNotifier.notifier).setCustomThemeId(theme.id);
+                },
+                child: Container(
+                  width: 100,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: theme.isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: isSelected ? MacosTheme.of(context).primaryColor : MacosColors.systemGrayColor.withOpacity(0.3),
+                      width: isSelected ? 2 : 1,
+                    ),
+                    boxShadow: isSelected
+                        ? [
+                            BoxShadow(
+                              color: MacosTheme.of(context).primaryColor.withOpacity(0.3),
+                              blurRadius: 8,
+                              spreadRadius: 1,
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Theme preview
+                      Container(
+                        width: 60,
+                        height: 30,
+                        decoration: BoxDecoration(
+                          color: theme.primaryColor,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Center(
+                          child: Container(
+                            width: 20,
+                            height: 20,
+                            decoration: BoxDecoration(
+                              color: theme.accentColor,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      // Theme name
+                      Text(
+                        theme.name,
+                        style: MacosTheme.of(context).typography.caption2.copyWith(
+                              color: theme.isDark ? Colors.white : Colors.black,
+                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            ),
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ],
+    );
+  }
+
   void _showClearDataConfirmationDialog(BuildContext context, WidgetRef ref) {
     showMacosAlertDialog(
       context: context,
