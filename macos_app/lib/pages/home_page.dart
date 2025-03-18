@@ -367,6 +367,15 @@ class _HomePageState extends ConsumerState<HomePage> {
                       const SizedBox(width: 8),
                       PushButton(
                         controlSize: ControlSize.small,
+                        secondary: true,
+                        onPressed: () {
+                          _validateUrl(context, url);
+                        },
+                        child: const Text('Validate'),
+                      ),
+                      const SizedBox(width: 8),
+                      PushButton(
+                        controlSize: ControlSize.small,
                         onPressed: () {
                           _openUrlInBrowser(context, url.url);
                         },
