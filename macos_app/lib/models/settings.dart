@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'theme_option.dart';
+
 class Settings {
   final ThemeMode themeMode;
   final String dataFolderPath;
@@ -11,6 +13,10 @@ class Settings {
   final bool autoBackupEnabled;
   final int maxBackups;
 
+  // Theme settings
+  final String customThemeId;
+  final bool useCustomTheme;
+
   Settings({
     this.themeMode = ThemeMode.system,
     this.dataFolderPath = '',
@@ -19,6 +25,8 @@ class Settings {
     this.autoImportFromClipboard = false,
     this.autoBackupEnabled = true,
     this.maxBackups = 10,
+    this.customThemeId = 'default_light',
+    this.useCustomTheme = false,
   });
 
   Settings copyWith({
