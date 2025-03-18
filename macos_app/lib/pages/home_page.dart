@@ -1013,6 +1013,46 @@ class _HomePageState extends ConsumerState<HomePage> {
     return formatter.format(dateTime);
   }
 
+  // Build a favicon image widget
+  Widget _buildFaviconImage(String? faviconUrl) {
+    if (faviconUrl == null) {
+      return const MacosIcon(
+        CupertinoIcons.globe,
+        size: 16,
+        color: MacosColors.systemGrayColor,
+      );
+    }
+
+    return SizedBox(
+      width: 16,
+      height: 16,
+      child: Image.network(
+        faviconUrl,
+        width: 16,
+        height: 16,
+        errorBuilder: (context, error, stackTrace) {
+          debugPrint('Error loading favicon: $error');
+          return const MacosIcon(
+            CupertinoIcons.globe,
+            size: 16,
+            color: MacosColors.systemGrayColor,
+          );
+        },
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return const SizedBox(
+            width: 16,
+            height: 16,
+            child: ProgressCircle(
+              value: 0.1,
+              size: 16,
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   // Validate all visible URLs
   Future<void> _validateVisibleUrls(BuildContext context) async {
     final appState = ref.read(appNotifier);
