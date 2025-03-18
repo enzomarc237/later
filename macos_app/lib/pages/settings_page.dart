@@ -298,7 +298,6 @@ class SettingsPage extends ConsumerWidget {
             value: settings.maxBackups.toDouble(),
             min: 1,
             max: 50,
-            divisions: 49,
             onChanged: (value) {
               ref.read(settingsNotifier.notifier).setMaxBackups(value.round());
             },
