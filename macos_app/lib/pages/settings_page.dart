@@ -486,11 +486,50 @@ class SettingsPage extends ConsumerWidget {
                             MacosIconButton(
                               icon: const MacosIcon(CupertinoIcons.trash),
                               onPressed: () async {
-                                final success = await ref.read(appNotifier.notifier).deleteBackup(backup.fileName);
-                                if (success) {
-                                  Navigator.of(context).pop();
-                                  _showBackupHistoryDialog(context, ref); // Refresh the dialog
-                                }
+                                // Show confirmation dialog
+                                showMacosAlertDialog(
+                                  context: context,
+                                  builder: (dialogContext) => MacosAlertDialog(
+                                    appIcon: const MacosIcon(
+                                      CupertinoIcons.trash,
+                                      size: 56,
+                                      color: MacosColors.systemRedColor,
+                                    ),
+                                    title: const Text('Delete Backup'),
+                                    message: const Text(
+                                      'Are you sure you want to delete this backup? This cannot be undone.',
+                                    ),
+                                    primaryButton: PushButton(
+                                      controlSize: ControlSize.large,
+                                      onPressed: () async {
+                                        // Close the confirmation dialog
+                                        Navigator.of(dialogContext).pop();
+
+                                        // Delete the backup
+                                        final success = await ref.read(appNotifier.notifier).deleteBackup(backup.fileName);
+
+                                        // Close the backup history dialog
+                                        if (context.mounted) {
+                                          Navigator.of(context).pop();
+
+                                          // Show a new backup history dialog if the context is still valid
+                                          if (context.mounted) {
+                                            _showBackupHistoryDialog(context, ref);
+                                          }
+                                        }
+                                      },
+                                      child: const Text('Delete'),
+                                    ),
+                                    secondaryButton: PushButton(
+                                      controlSize: ControlSize.large,
+                                      secondary: true,
+                                      onPressed: () {
+                                        Navigator.of(dialogContext).pop();
+                                      },
+                                      child: const Text('Cancel'),
+                                    ),
+                                  ),
+                                );
                               },
                             ),
                           ],
