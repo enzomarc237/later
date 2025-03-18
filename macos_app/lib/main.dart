@@ -31,10 +31,24 @@ Future<void> main() async {
   debugPrint('version from pubspec.yaml: $version');
   sharedPreferences.setString('appVersion', version.toString());
 
+  // Get initial data folder path from settings
+  String initialDataFolderPath = '';
+  final settingsJson = sharedPreferences.getString('settings');
+  if (settingsJson != null) {
+    try {
+      final settingsMap = jsonDecode(settingsJson) as Map<String, dynamic>;
+      initialDataFolderPath = settingsMap['dataFolderPath'] as String? ?? '';
+    } catch (e) {
+      debugPrint('Error loading initial data folder path: $e');
+    }
+  }
+
   // Create ProviderContainer to access providers before runApp
   final container = ProviderContainer(
     overrides: [
       sharedPreferencesProvider.overrideWithValue(sharedPreferences),
+      // Initialize dataFolderPathProvider with the path from settings
+      dataFolderPathProvider.overrideWithValue(StateController(initialDataFolderPath)),
     ],
   );
 
@@ -190,12 +204,7 @@ class MainApp extends ConsumerWidget {
     return MacosApp(
       navigatorKey: DialogService.navigatorKey,
       title: 'Later',
-      theme: MacosThemeData().copyWith(
-        primaryColor: Colors.grey.shade800,
-        iconButtonTheme: MacosIconButtonThemeData(
-          disabledColor: Colors.grey.shade800,
-        ),
-      ),
+      theme: MacosThemeData.light(),
       darkTheme: MacosThemeData.dark().copyWith(
         primaryColor: Colors.white,
         iconButtonTheme: const MacosIconButtonThemeData(
