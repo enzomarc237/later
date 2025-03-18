@@ -3,7 +3,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../utils/backup_service.dart';
 import '../utils/file_storage_service.dart';
-import 'settings_notifier.dart';
 
 // Export all providers
 export 'preferences_repository.dart';
@@ -16,10 +15,13 @@ final sharedPreferencesProvider = Provider<SharedPreferences>(
   name: 'SharedPreferencesProvider',
 );
 
-// FileStorageService provider that uses the data folder path from settings
+// StateProvider for data folder path to break circular dependency
+final dataFolderPathProvider = StateProvider<String>((ref) => '');
+
+// FileStorageService provider that uses the data folder path from the StateProvider
 final fileStorageServiceProvider = Provider<FileStorageService>((ref) {
-  final settings = ref.watch(settingsNotifier);
-  return FileStorageService(basePath: settings.dataFolderPath);
+  final dataFolderPath = ref.watch(dataFolderPathProvider);
+  return FileStorageService(basePath: dataFolderPath);
 });
 
 // BackupService provider that uses the FileStorageService
