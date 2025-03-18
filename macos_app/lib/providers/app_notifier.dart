@@ -118,6 +118,7 @@ class AppNotifier extends Notifier<AppState> {
     _preferencesRepository = ref.read(preferencesRepositoryProvider);
     _backupService = ref.read(backupServiceProvider);
     _urlValidator = UrlValidator();
+    _metadataService = ref.read(metadataServiceProvider);
 
     // Initialize auto backup setting from settings
     final settings = ref.read(settingsNotifier);
