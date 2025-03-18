@@ -127,7 +127,7 @@
 ### 7.1 Data Storage Improvements
 
 - [x] Implement file-based storage using the data folder path setting
-- [ ] Add migration from SharedPreferences to file-based storage
+- [x] Add migration from SharedPreferences to file-based storage
 - [ ] Add automatic backups of user data
 - [ ] Implement data import/export in various formats (JSON, HTML, CSV)
 - [ ] Add cloud sync capabilities (iCloud, Dropbox, etc.)
