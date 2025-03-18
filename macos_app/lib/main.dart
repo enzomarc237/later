@@ -48,7 +48,7 @@ Future<void> main() async {
     overrides: [
       sharedPreferencesProvider.overrideWithValue(sharedPreferences),
       // Initialize dataFolderPathProvider with the path from settings
-      dataFolderPathProvider.overrideWith((ref) => StateController(initialDataFolderPath)),
+      dataFolderPathProvider.overrideWith((ref) => initialDataFolderPath),
     ],
   );
 
