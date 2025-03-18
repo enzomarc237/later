@@ -69,6 +69,13 @@ class SettingsPage extends ConsumerWidget {
                   _buildSystemTraySettings(context, ref, settings),
                   const SizedBox(height: 32),
                   Text(
+                    'Keyboard Shortcuts',
+                    style: MacosTheme.of(context).typography.title1,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildKeyboardShortcutsInfo(context),
+                  const SizedBox(height: 32),
+                  Text(
                     'Browser Extensions',
                     style: MacosTheme.of(context).typography.title1,
                   ),
