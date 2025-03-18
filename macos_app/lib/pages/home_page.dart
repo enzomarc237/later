@@ -1045,7 +1045,6 @@ class _HomePageState extends ConsumerState<HomePage> {
             height: 16,
             child: ProgressCircle(
               value: 0.1,
-              size: 16,
             ),
           );
         },
