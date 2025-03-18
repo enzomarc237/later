@@ -15,6 +15,10 @@ class AppState {
   final List<UrlItem> urls;
   final bool isLoading;
 
+  // Selection state for bulk operations
+  final bool selectionMode;
+  final Set<String> selectedUrlIds;
+
   AppState({
     required this.message,
     required this.appVersion,
@@ -23,6 +27,8 @@ class AppState {
     this.selectedCategoryId,
     this.urls = const [],
     this.isLoading = false,
+    this.selectionMode = false,
+    this.selectedUrlIds = const {},
   });
 
   AppState copyWith({
@@ -34,6 +40,9 @@ class AppState {
     bool clearSelectedCategory = false,
     List<UrlItem>? urls,
     bool? isLoading,
+    bool? selectionMode,
+    Set<String>? selectedUrlIds,
+    bool clearSelectedUrls = false,
   }) {
     return AppState(
       message: message ?? this.message,
@@ -43,6 +52,8 @@ class AppState {
       selectedCategoryId: clearSelectedCategory ? null : selectedCategoryId ?? this.selectedCategoryId,
       urls: urls ?? this.urls,
       isLoading: isLoading ?? this.isLoading,
+      selectionMode: selectionMode ?? this.selectionMode,
+      selectedUrlIds: clearSelectedUrls ? {} : selectedUrlIds ?? this.selectedUrlIds,
     );
   }
 
@@ -50,12 +61,33 @@ class AppState {
   bool operator ==(covariant AppState other) {
     if (identical(this, other)) return true;
 
-    return other.message == message && other.appVersion == appVersion && other.currentDirectory == currentDirectory && listEquals(other.categories, categories) && other.selectedCategoryId == selectedCategoryId && listEquals(other.urls, urls) && other.isLoading == isLoading;
+    return other.message == message && other.appVersion == appVersion && other.currentDirectory == currentDirectory && listEquals(other.categories, categories) && other.selectedCategoryId == selectedCategoryId && listEquals(other.urls, urls) && other.isLoading == isLoading && other.selectionMode == selectionMode && setEquals(other.selectedUrlIds, selectedUrlIds);
   }
 
   @override
   int get hashCode {
-    return message.hashCode ^ appVersion.hashCode ^ currentDirectory.hashCode ^ categories.hashCode ^ selectedCategoryId.hashCode ^ urls.hashCode ^ isLoading.hashCode;
+    return message.hashCode ^ appVersion.hashCode ^ currentDirectory.hashCode ^ categories.hashCode ^ selectedCategoryId.hashCode ^ urls.hashCode ^ isLoading.hashCode ^ selectionMode.hashCode ^ selectedUrlIds.hashCode;
+  }
+
+  // Get the currently visible URLs (filtered by category)
+  List<UrlItem> get visibleUrls {
+    return selectedCategoryUrls;
+  }
+
+  // Get the number of selected URLs
+  int get selectedUrlCount {
+    return selectedUrlIds.length;
+  }
+
+  // Check if a URL is selected
+  bool isUrlSelected(String urlId) {
+    return selectedUrlIds.contains(urlId);
+  }
+
+  // Check if all visible URLs are selected
+  bool get areAllVisibleUrlsSelected {
+    if (visibleUrls.isEmpty) return false;
+    return visibleUrls.every((url) => selectedUrlIds.contains(url.id));
   }
 
   @override
