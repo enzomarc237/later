@@ -420,65 +420,70 @@ class SettingsPage extends ConsumerWidget {
                             // Restore backup button
                             MacosIconButton(
                               icon: const MacosIcon(CupertinoIcons.arrow_counterclockwise),
-                              onPressed: () async {
+                              onPressed: () {
+                                // Close the backup history dialog first
                                 Navigator.of(context).pop();
 
-                                // Show confirmation dialog
-                                showMacosAlertDialog(
-                                  context: context,
-                                  builder: (_) => MacosAlertDialog(
-                                    appIcon: const MacosIcon(
-                                      CupertinoIcons.arrow_counterclockwise,
-                                      size: 56,
-                                      color: MacosColors.systemBlueColor,
-                                    ),
-                                    title: const Text('Restore Backup'),
-                                    message: const Text(
-                                      'Are you sure you want to restore this backup? This will replace all your current data.',
-                                    ),
-                                    primaryButton: PushButton(
-                                      controlSize: ControlSize.large,
-                                      onPressed: () async {
-                                        Navigator.of(context).pop();
+                                // Show confirmation dialog with a fresh context
+                                if (context.mounted) {
+                                  showMacosAlertDialog(
+                                    context: context,
+                                    builder: (dialogContext) => MacosAlertDialog(
+                                      appIcon: const MacosIcon(
+                                        CupertinoIcons.arrow_counterclockwise,
+                                        size: 56,
+                                        color: MacosColors.systemBlueColor,
+                                      ),
+                                      title: const Text('Restore Backup'),
+                                      message: const Text(
+                                        'Are you sure you want to restore this backup? This will replace all your current data.',
+                                      ),
+                                      primaryButton: PushButton(
+                                        controlSize: ControlSize.large,
+                                        onPressed: () async {
+                                          // Close the confirmation dialog
+                                          Navigator.of(dialogContext).pop();
 
-                                        final success = await ref.read(appNotifier.notifier).restoreBackup(backup.fileName);
+                                          final success = await ref.read(appNotifier.notifier).restoreBackup(backup.fileName);
 
-                                        if (context.mounted) {
-                                          showMacosAlertDialog(
-                                            context: context,
-                                            builder: (_) => MacosAlertDialog(
-                                              appIcon: MacosIcon(
-                                                success ? CupertinoIcons.check_mark_circled : CupertinoIcons.exclamationmark_triangle,
-                                                size: 56,
-                                                color: success ? MacosColors.systemGreenColor : MacosColors.systemOrangeColor,
+                                          // Show result dialog if context is still valid
+                                          if (context.mounted) {
+                                            showMacosAlertDialog(
+                                              context: context,
+                                              builder: (resultContext) => MacosAlertDialog(
+                                                appIcon: MacosIcon(
+                                                  success ? CupertinoIcons.check_mark_circled : CupertinoIcons.exclamationmark_triangle,
+                                                  size: 56,
+                                                  color: success ? MacosColors.systemGreenColor : MacosColors.systemOrangeColor,
+                                                ),
+                                                title: Text(success ? 'Restore Successful' : 'Restore Failed'),
+                                                message: Text(
+                                                  success ? 'Backup was successfully restored.' : 'Failed to restore backup. Please try again.',
+                                                ),
+                                                primaryButton: PushButton(
+                                                  controlSize: ControlSize.large,
+                                                  onPressed: () {
+                                                    Navigator.of(resultContext).pop();
+                                                  },
+                                                  child: const Text('OK'),
+                                                ),
                                               ),
-                                              title: Text(success ? 'Restore Successful' : 'Restore Failed'),
-                                              message: Text(
-                                                success ? 'Backup was successfully restored.' : 'Failed to restore backup. Please try again.',
-                                              ),
-                                              primaryButton: PushButton(
-                                                controlSize: ControlSize.large,
-                                                onPressed: () {
-                                                  Navigator.of(context).pop();
-                                                },
-                                                child: const Text('OK'),
-                                              ),
-                                            ),
-                                          );
-                                        }
-                                      },
-                                      child: const Text('Restore'),
+                                            );
+                                          }
+                                        },
+                                        child: const Text('Restore'),
+                                      ),
+                                      secondaryButton: PushButton(
+                                        controlSize: ControlSize.large,
+                                        secondary: true,
+                                        onPressed: () {
+                                          Navigator.of(dialogContext).pop();
+                                        },
+                                        child: const Text('Cancel'),
+                                      ),
                                     ),
-                                    secondaryButton: PushButton(
-                                      controlSize: ControlSize.large,
-                                      secondary: true,
-                                      onPressed: () {
-                                        Navigator.of(context).pop();
-                                      },
-                                      child: const Text('Cancel'),
-                                    ),
-                                  ),
-                                );
+                                  );
+                                }
                               },
                             ),
                             const SizedBox(width: 8),
