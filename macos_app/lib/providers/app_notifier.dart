@@ -252,8 +252,8 @@ class AppNotifier extends Notifier<AppState> {
     final updatedMetadata = {
       ...existingMetadata,
       'faviconUrl': metadata.faviconUrl,
-      'siteName': metadata.siteName,
-      'imageUrl': metadata.imageUrl,
+      'title': metadata.title,
+      'description': metadata.description,
       'lastFetched': DateTime.now().toIso8601String(),
     };
 
