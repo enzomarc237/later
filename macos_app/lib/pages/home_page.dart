@@ -68,13 +68,9 @@ class _HomePageState extends ConsumerState<HomePage> {
             MacosWindowScope.of(context).toggleSidebar();
           },
         ),
-        title: selectionMode 
-          ? Text('${appState.selectedUrlCount} selected') 
-          : Text(selectedCategory.name),
+        title: selectionMode ? Text('${appState.selectedUrlCount} selected') : Text(selectedCategory.name),
         titleWidth: 250,
-        actions: selectionMode
-          ? _buildSelectionModeActions(context, appState)
-          : _buildNormalModeActions(context, selectedCategoryId),
+        actions: selectionMode ? _buildSelectionModeActions(context, appState) : _buildNormalModeActions(context, selectedCategoryId),
       ),
       children: [
         ContentArea(
@@ -210,7 +206,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   List<ToolbarItem> _buildSelectionModeActions(BuildContext context, AppState appState) {
     final appNotifierRef = ref.read(appNotifier.notifier);
     final hasSelections = appState.selectedUrlCount > 0;
-    
+
     return [
       ToolBarIconButton(
         label: 'Select All',
@@ -223,28 +219,29 @@ class _HomePageState extends ConsumerState<HomePage> {
       ToolBarIconButton(
         label: 'Delete',
         icon: const MacosIcon(CupertinoIcons.trash),
-        onPressed: hasSelections ? () {
-          _showDeleteSelectedUrlsDialog(context);
-        } : null,
+        onPressed: hasSelections
+            ? () {
+                _showDeleteSelectedUrlsDialog(context);
+              }
+            : null,
         showLabel: true,
       ),
       ToolBarIconButton(
         label: 'Move',
         icon: const MacosIcon(CupertinoIcons.folder),
-        onPressed: hasSelections ? () {
-          _showMoveSelectedUrlsDialog(context);
-        } : null,
+        onPressed: hasSelections
+            ? () {
+                _showMoveSelectedUrlsDialog(context);
+              }
+            : null,
         showLabel: true,
       ),
     ];
   }
 
   Widget _buildUrlCard(BuildContext context, UrlItem url, AppState appState) {
-    final appState = ref.watch(appNotifier);
-    // String category = 'Uknnown';
-    // appState.categories.forEach((categ) {
-    //   if (categ.id.toLowerCase() == url.categoryId)
-    // })
+    // Use the passed appState parameter instead of reading it again
+    // This avoids potential confusion with two variables with the same name
 
     return MacosCard(
       child: Padding(
@@ -270,7 +267,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                     style: MacosTheme.of(context).typography.title3,
                     overflow: TextOverflow.ellipsis,
                   ),
-                if (!appState.selectionMode) ...[
+                ),
+                if (!appState.selectionMode)
                   Row(
                     children: [
                       MacosIconButton(
@@ -288,7 +286,6 @@ class _HomePageState extends ConsumerState<HomePage> {
                       ),
                     ],
                   ),
-                ),
               ],
             ),
             const SizedBox(height: 8),
@@ -320,7 +317,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                         color: MacosColors.systemGrayColor,
                       ),
                 ),
-                if (!appState.selectionMode) ...[
+                if (!appState.selectionMode)
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
@@ -351,7 +348,6 @@ class _HomePageState extends ConsumerState<HomePage> {
                       ),
                     ],
                   ),
-                ),
               ],
             ),
           ],
@@ -364,7 +360,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   void _showDeleteSelectedUrlsDialog(BuildContext context) {
     final appState = ref.read(appNotifier);
     final count = appState.selectedUrlCount;
-    
+
     showMacosAlertDialog(
       context: context,
       builder: (_) => MacosAlertDialog(
@@ -379,13 +375,13 @@ class _HomePageState extends ConsumerState<HomePage> {
           controlSize: ControlSize.large,
           onPressed: () {
             ref.read(appNotifier.notifier).deleteSelectedUrls();
-            
+
             // Show notification
             LocalNotification(
               title: 'URLs Deleted',
               body: 'Deleted $count URLs',
             ).show();
-            
+
             Navigator.of(context).pop();
           },
           child: const Text('Delete'),
@@ -401,16 +397,16 @@ class _HomePageState extends ConsumerState<HomePage> {
       ),
     );
   }
-  
+
   // Show dialog to move selected URLs to a category
   void _showMoveSelectedUrlsDialog(BuildContext context) {
     final appState = ref.read(appNotifier);
     final count = appState.selectedUrlCount;
     final categories = appState.categories;
-    
+
     // Default to first category or empty string if no categories
     String selectedCategoryId = categories.isNotEmpty ? categories.first.id : '';
-    
+
     showMacosAlertDialog(
       context: context,
       builder: (_) => StatefulBuilder(
@@ -450,22 +446,26 @@ class _HomePageState extends ConsumerState<HomePage> {
           ),
           primaryButton: PushButton(
             controlSize: ControlSize.large,
-            onPressed: categories.isEmpty ? null : () {
-              ref.read(appNotifier.notifier).moveSelectedUrlsToCategory(selectedCategoryId);
-              
-              // Show notification
-              final categoryName = categories.firstWhere(
-                (cat) => cat.id == selectedCategoryId,
-                orElse: () => Category(id: 'unknown', name: 'Unknown'),
-              ).name;
-              
-              LocalNotification(
-                title: 'URLs Moved',
-                body: 'Moved $count URLs to "$categoryName"',
-              ).show();
-              
-              Navigator.of(context).pop();
-            },
+            onPressed: categories.isEmpty
+                ? null
+                : () {
+                    ref.read(appNotifier.notifier).moveSelectedUrlsToCategory(selectedCategoryId);
+
+                    // Show notification
+                    final categoryName = categories
+                        .firstWhere(
+                          (cat) => cat.id == selectedCategoryId,
+                          orElse: () => Category(id: 'unknown', name: 'Unknown'),
+                        )
+                        .name;
+
+                    LocalNotification(
+                      title: 'URLs Moved',
+                      body: 'Moved $count URLs to "$categoryName"',
+                    ).show();
+
+                    Navigator.of(context).pop();
+                  },
             child: const Text('Move'),
           ),
           secondaryButton: PushButton(
@@ -480,6 +480,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       ),
     );
   }
+
   void _showUrlPreview(BuildContext context, UrlItem url) {
     showMacosAlertDialog(
       barrierDismissible: true,
