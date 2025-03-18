@@ -1,6 +1,7 @@
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../utils/backup_service.dart';
 import '../utils/file_storage_service.dart';
 import 'settings_notifier.dart';
 
@@ -19,4 +20,10 @@ final sharedPreferencesProvider = Provider<SharedPreferences>(
 final fileStorageServiceProvider = Provider<FileStorageService>((ref) {
   final settings = ref.watch(settingsNotifier);
   return FileStorageService(basePath: settings.dataFolderPath);
+});
+
+// BackupService provider that uses the FileStorageService
+final backupServiceProvider = Provider<BackupService>((ref) {
+  final fileStorage = ref.watch(fileStorageServiceProvider);
+  return BackupService(fileStorage: fileStorage);
 });
