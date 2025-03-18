@@ -29,6 +29,9 @@ class Settings {
     this.useCustomTheme = false,
   });
 
+  /// Get the selected theme option based on customThemeId
+  ThemeOption get selectedTheme => ThemeOption.getById(customThemeId);
+
   Settings copyWith({
     ThemeMode? themeMode,
     String? dataFolderPath,
@@ -37,6 +40,8 @@ class Settings {
     bool? autoImportFromClipboard,
     bool? autoBackupEnabled,
     int? maxBackups,
+    String? customThemeId,
+    bool? useCustomTheme,
   }) {
     return Settings(
       themeMode: themeMode ?? this.themeMode,
@@ -46,6 +51,8 @@ class Settings {
       autoImportFromClipboard: autoImportFromClipboard ?? this.autoImportFromClipboard,
       autoBackupEnabled: autoBackupEnabled ?? this.autoBackupEnabled,
       maxBackups: maxBackups ?? this.maxBackups,
+      customThemeId: customThemeId ?? this.customThemeId,
+      useCustomTheme: useCustomTheme ?? this.useCustomTheme,
     );
   }
 
