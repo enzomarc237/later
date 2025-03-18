@@ -45,6 +45,20 @@ class SettingsNotifier extends Notifier<Settings> {
     await _saveSettings();
   }
 
+  // Backup settings
+  Future<void> setAutoBackupEnabled(bool enabled) async {
+    state = state.copyWith(autoBackupEnabled: enabled);
+    await _saveSettings();
+
+    // Update the AppNotifier's auto backup setting
+    ref.read(appNotifier.notifier).setAutoBackup(enabled);
+  }
+
+  Future<void> setMaxBackups(int maxBackups) async {
+    state = state.copyWith(maxBackups: maxBackups);
+    await _saveSettings();
+  }
+
   Future<void> clearAllData() async {
     await _preferencesRepository.clearAllData();
 
