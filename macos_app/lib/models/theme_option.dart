@@ -30,20 +30,19 @@ class ThemeOption {
   /// Creates a [MacosThemeData] from this theme option.
   MacosThemeData toMacosThemeData() {
     final baseTheme = isDark ? MacosThemeData.dark() : MacosThemeData.light();
-    
+
     return baseTheme.copyWith(
       primaryColor: primaryColor,
       pushButtonTheme: PushButtonThemeData(
-        color: ButtonColor.accentColor,
+        // Use accent color for buttons
         secondaryColor: accentColor,
       ),
       iconButtonTheme: MacosIconButtonThemeData(
         backgroundColor: Colors.transparent,
         hoverColor: accentColor.withOpacity(0.1),
-        pressedColor: accentColor.withOpacity(0.2),
       ),
-      dividerColor: isDark ? MacosColors.separatorColor.darkColor : MacosColors.separatorColor,
-      canvasColor: isDark ? MacosColors.windowBackgroundColor.darkColor : MacosColors.windowBackgroundColor,
+      dividerColor: isDark ? const Color(0xFF3F3F3F) : MacosColors.separatorColor,
+      canvasColor: isDark ? const Color(0xFF1E1E1E) : MacosColors.windowBackgroundColor,
     );
   }
 
@@ -57,7 +56,7 @@ class ThemeOption {
       accentColor: MacosColors.controlAccentColor,
       isDark: false,
     ),
-    
+
     // Default Dark Theme
     const ThemeOption(
       id: 'default_dark',
@@ -66,7 +65,7 @@ class ThemeOption {
       accentColor: MacosColors.controlAccentColor,
       isDark: true,
     ),
-    
+
     // Blue Theme
     ThemeOption(
       id: 'blue',
@@ -75,7 +74,7 @@ class ThemeOption {
       accentColor: Colors.blue.shade500,
       isDark: false,
     ),
-    
+
     // Dark Blue Theme
     ThemeOption(
       id: 'dark_blue',
@@ -84,7 +83,7 @@ class ThemeOption {
       accentColor: Colors.blue.shade200,
       isDark: true,
     ),
-    
+
     // Green Theme
     ThemeOption(
       id: 'green',
@@ -93,7 +92,7 @@ class ThemeOption {
       accentColor: Colors.green.shade500,
       isDark: false,
     ),
-    
+
     // Dark Green Theme
     ThemeOption(
       id: 'dark_green',
@@ -102,7 +101,7 @@ class ThemeOption {
       accentColor: Colors.green.shade200,
       isDark: true,
     ),
-    
+
     // Purple Theme
     ThemeOption(
       id: 'purple',
@@ -111,7 +110,7 @@ class ThemeOption {
       accentColor: Colors.purple.shade500,
       isDark: false,
     ),
-    
+
     // Dark Purple Theme
     ThemeOption(
       id: 'dark_purple',
@@ -120,7 +119,7 @@ class ThemeOption {
       accentColor: Colors.purple.shade200,
       isDark: true,
     ),
-    
+
     // High Contrast Light
     const ThemeOption(
       id: 'high_contrast_light',
@@ -129,7 +128,7 @@ class ThemeOption {
       accentColor: Colors.black,
       isDark: false,
     ),
-    
+
     // High Contrast Dark
     const ThemeOption(
       id: 'high_contrast_dark',
@@ -173,21 +172,12 @@ class ThemeOption {
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-  
-    return other is ThemeOption &&
-      other.id == id &&
-      other.name == name &&
-      other.primaryColor == primaryColor &&
-      other.accentColor == accentColor &&
-      other.isDark == isDark;
+
+    return other is ThemeOption && other.id == id && other.name == name && other.primaryColor == primaryColor && other.accentColor == accentColor && other.isDark == isDark;
   }
 
   @override
   int get hashCode {
-    return id.hashCode ^
-      name.hashCode ^
-      primaryColor.hashCode ^
-      accentColor.hashCode ^
-      isDark.hashCode;
+    return id.hashCode ^ name.hashCode ^ primaryColor.hashCode ^ accentColor.hashCode ^ isDark.hashCode;
   }
 }
