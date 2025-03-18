@@ -16,21 +16,21 @@ class KeyboardShortcuts {
     // Navigation shortcuts
     const SingleActivator(LogicalKeyboardKey.keyH): 'Go to Home',
     const SingleActivator(LogicalKeyboardKey.keyS): 'Go to Settings',
-    
+
     // URL management shortcuts
     const SingleActivator(LogicalKeyboardKey.keyN, meta: true): 'New URL',
     const SingleActivator(LogicalKeyboardKey.keyE, meta: true): 'Edit selected URL',
     const SingleActivator(LogicalKeyboardKey.keyD, meta: true): 'Delete selected URL',
     const SingleActivator(LogicalKeyboardKey.keyC, meta: true, shift: true): 'Copy URL to clipboard',
     const SingleActivator(LogicalKeyboardKey.keyO, meta: true): 'Open URL in browser',
-    
+
     // Category management shortcuts
     const SingleActivator(LogicalKeyboardKey.keyN, meta: true, shift: true): 'New Category',
     const SingleActivator(LogicalKeyboardKey.keyE, meta: true, shift: true): 'Edit selected Category',
-    
+
     // Search shortcut
     const SingleActivator(LogicalKeyboardKey.keyF, meta: true): 'Focus search field',
-    
+
     // Import/Export shortcuts
     const SingleActivator(LogicalKeyboardKey.keyI, meta: true): 'Import URLs',
     const SingleActivator(LogicalKeyboardKey.keyE, meta: true, alt: true): 'Export URLs',
@@ -38,9 +38,9 @@ class KeyboardShortcuts {
 
   /// Handle keyboard shortcuts
   static Map<ShortcutActivator, VoidCallback> getApplicationShortcuts(BuildContext context, WidgetRef ref) {
-    final appNotifier = ref.read(appNotifier.notifier);
-    final appState = ref.read(appNotifier);
-    
+    final appNotifierRef = ref.read(appNotifier.notifier);
+    final appStateRef = ref.read(appNotifier);
+
     return {
       // Navigation shortcuts
       const SingleActivator(LogicalKeyboardKey.keyH): () {
@@ -51,7 +51,7 @@ class KeyboardShortcuts {
         // Go to Settings
         Navigator.of(context).pushNamed('/settings');
       },
-      
+
       // URL management shortcuts
       const SingleActivator(LogicalKeyboardKey.keyN, meta: true): () {
         // New URL - show add URL dialog
@@ -73,7 +73,7 @@ class KeyboardShortcuts {
         // Open URL in browser
         // This will be implemented in the HomePage
       },
-      
+
       // Category management shortcuts
       const SingleActivator(LogicalKeyboardKey.keyN, meta: true, shift: true): () {
         // New Category - show add category dialog
@@ -83,13 +83,13 @@ class KeyboardShortcuts {
         // Edit selected Category - show edit category dialog
         // This will be implemented in the MainView
       },
-      
+
       // Search shortcut
       const SingleActivator(LogicalKeyboardKey.keyF, meta: true): () {
         // Focus search field
         // This will be implemented in the MainView and HomePage
       },
-      
+
       // Import/Export shortcuts
       const SingleActivator(LogicalKeyboardKey.keyI, meta: true): () {
         // Import URLs
