@@ -65,6 +65,8 @@ class Settings {
       'autoImportFromClipboard': autoImportFromClipboard,
       'autoBackupEnabled': autoBackupEnabled,
       'maxBackups': maxBackups,
+      'customThemeId': customThemeId,
+      'useCustomTheme': useCustomTheme,
     };
   }
 
