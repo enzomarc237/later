@@ -264,6 +264,254 @@ class SettingsPage extends ConsumerWidget {
     );
   }
 
+  Widget _buildBackupSettings(BuildContext context, WidgetRef ref, Settings settings) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Automatic backups checkbox
+        Row(
+          children: [
+            MacosCheckbox(
+              value: settings.autoBackupEnabled,
+              onChanged: (value) {
+                ref.read(settingsNotifier.notifier).setAutoBackupEnabled(value);
+              },
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'Enable automatic backups',
+              style: MacosTheme.of(context).typography.body,
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+
+        // Maximum backups slider
+        Text(
+          'Maximum number of backups: ${settings.maxBackups}',
+          style: MacosTheme.of(context).typography.body,
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          width: 300,
+          child: MacosSlider(
+            value: settings.maxBackups.toDouble(),
+            min: 1,
+            max: 50,
+            divisions: 49,
+            onChanged: (value) {
+              ref.read(settingsNotifier.notifier).setMaxBackups(value.round());
+            },
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Backup actions
+        Row(
+          children: [
+            PushButton(
+              controlSize: ControlSize.regular,
+              onPressed: () async {
+                final backupName = await ref.read(appNotifier.notifier).createBackup();
+                if (backupName != null) {
+                  showMacosAlertDialog(
+                    context: context,
+                    builder: (_) => MacosAlertDialog(
+                      appIcon: const MacosIcon(
+                        CupertinoIcons.check_mark_circled,
+                        size: 56,
+                        color: MacosColors.systemGreenColor,
+                      ),
+                      title: const Text('Backup Created'),
+                      message: Text('Backup created successfully: $backupName'),
+                      primaryButton: PushButton(
+                        controlSize: ControlSize.large,
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                        child: const Text('OK'),
+                      ),
+                    ),
+                  );
+                } else {
+                  showMacosAlertDialog(
+                    context: context,
+                    builder: (_) => MacosAlertDialog(
+                      appIcon: const MacosIcon(
+                        CupertinoIcons.exclamationmark_triangle,
+                        size: 56,
+                        color: MacosColors.systemOrangeColor,
+                      ),
+                      title: const Text('Backup Failed'),
+                      message: const Text('Failed to create backup. Please try again.'),
+                      primaryButton: PushButton(
+                        controlSize: ControlSize.large,
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                        child: const Text('OK'),
+                      ),
+                    ),
+                  );
+                }
+              },
+              child: const Text('Create Backup Now'),
+            ),
+            const SizedBox(width: 8),
+            PushButton(
+              controlSize: ControlSize.regular,
+              secondary: true,
+              onPressed: () {
+                _showBackupHistoryDialog(context, ref);
+              },
+              child: const Text('Manage Backups'),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  void _showBackupHistoryDialog(BuildContext context, WidgetRef ref) async {
+    final backups = await ref.read(appNotifier.notifier).listBackups();
+
+    if (context.mounted) {
+      showMacosAlertDialog(
+        context: context,
+        builder: (_) => MacosAlertDialog(
+          appIcon: const MacosIcon(
+            CupertinoIcons.clock,
+            size: 56,
+            color: MacosColors.systemBlueColor,
+          ),
+          title: const Text('Backup History'),
+          message: SizedBox(
+            width: 500,
+            height: 300,
+            child: backups.isEmpty
+                ? const Center(child: Text('No backups found'))
+                : ListView.builder(
+                    itemCount: backups.length,
+                    itemBuilder: (context, index) {
+                      final backup = backups[index];
+                      final date = backup.timestamp.toLocal();
+                      final formattedDate = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    formattedDate,
+                                    style: MacosTheme.of(context).typography.body.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                  ),
+                                  Text(
+                                    '${backup.categoriesCount} categories, ${backup.urlsCount} URLs',
+                                    style: MacosTheme.of(context).typography.caption1,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            MacosIconButton(
+                              icon: const MacosIcon(CupertinoIcons.arrow_counterclockwise),
+                              onPressed: () async {
+                                Navigator.of(context).pop();
+
+                                // Show confirmation dialog
+                                showMacosAlertDialog(
+                                  context: context,
+                                  builder: (_) => MacosAlertDialog(
+                                    appIcon: const MacosIcon(
+                                      CupertinoIcons.arrow_counterclockwise,
+                                      size: 56,
+                                      color: MacosColors.systemBlueColor,
+                                    ),
+                                    title: const Text('Restore Backup'),
+                                    message: const Text(
+                                      'Are you sure you want to restore this backup? This will replace all your current data.',
+                                    ),
+                                    primaryButton: PushButton(
+                                      controlSize: ControlSize.large,
+                                      onPressed: () async {
+                                        Navigator.of(context).pop();
+
+                                        final success = await ref.read(appNotifier.notifier).restoreBackup(backup.fileName);
+
+                                        if (context.mounted) {
+                                          showMacosAlertDialog(
+                                            context: context,
+                                            builder: (_) => MacosAlertDialog(
+                                              appIcon: MacosIcon(
+                                                success ? CupertinoIcons.check_mark_circled : CupertinoIcons.exclamationmark_triangle,
+                                                size: 56,
+                                                color: success ? MacosColors.systemGreenColor : MacosColors.systemOrangeColor,
+                                              ),
+                                              title: Text(success ? 'Restore Successful' : 'Restore Failed'),
+                                              message: Text(
+                                                success ? 'Backup was successfully restored.' : 'Failed to restore backup. Please try again.',
+                                              ),
+                                              primaryButton: PushButton(
+                                                controlSize: ControlSize.large,
+                                                onPressed: () {
+                                                  Navigator.of(context).pop();
+                                                },
+                                                child: const Text('OK'),
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                      },
+                                      child: const Text('Restore'),
+                                    ),
+                                    secondaryButton: PushButton(
+                                      controlSize: ControlSize.large,
+                                      secondary: true,
+                                      onPressed: () {
+                                        Navigator.of(context).pop();
+                                      },
+                                      child: const Text('Cancel'),
+                                    ),
+                                  ),
+                                );
+                              },
+                              tooltip: 'Restore this backup',
+                            ),
+                            const SizedBox(width: 8),
+                            MacosIconButton(
+                              icon: const MacosIcon(CupertinoIcons.trash),
+                              onPressed: () async {
+                                final success = await ref.read(appNotifier.notifier).deleteBackup(backup.fileName);
+                                if (success) {
+                                  Navigator.of(context).pop();
+                                  _showBackupHistoryDialog(context, ref); // Refresh the dialog
+                                }
+                              },
+                              tooltip: 'Delete this backup',
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+          ),
+          primaryButton: PushButton(
+            controlSize: ControlSize.large,
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: const Text('Close'),
+          ),
+        ),
+      );
+    }
+  }
+
   Widget _buildBrowserExtensionsInfo(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
