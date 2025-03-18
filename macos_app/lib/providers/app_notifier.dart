@@ -246,6 +246,92 @@ class AppNotifier extends Notifier<AppState> {
     _saveUrls();
   }
 
+  // Bulk operations
+
+  // Toggle selection mode
+  void toggleSelectionMode() {
+    final newSelectionMode = !state.selectionMode;
+    state = state.copyWith(
+      selectionMode: newSelectionMode,
+      // Clear selections when exiting selection mode
+      clearSelectedUrls: !newSelectionMode,
+    );
+  }
+
+  // Toggle selection for a URL
+  void toggleUrlSelection(String urlId) {
+    if (!state.selectionMode) {
+      // Enable selection mode when selecting the first URL
+      state = state.copyWith(selectionMode: true);
+    }
+
+    final selectedUrlIds = Set<String>.from(state.selectedUrlIds);
+    if (selectedUrlIds.contains(urlId)) {
+      selectedUrlIds.remove(urlId);
+    } else {
+      selectedUrlIds.add(urlId);
+    }
+
+    state = state.copyWith(selectedUrlIds: selectedUrlIds);
+  }
+
+  // Select all visible URLs
+  void selectAllVisibleUrls() {
+    final visibleUrls = state.visibleUrls;
+    if (visibleUrls.isEmpty) return;
+
+    final selectedUrlIds = Set<String>.from(state.selectedUrlIds);
+    for (final url in visibleUrls) {
+      selectedUrlIds.add(url.id);
+    }
+
+    state = state.copyWith(
+      selectionMode: true,
+      selectedUrlIds: selectedUrlIds,
+    );
+  }
+
+  // Deselect all URLs
+  void deselectAllUrls() {
+    state = state.copyWith(clearSelectedUrls: true);
+  }
+
+  // Delete selected URLs
+  void deleteSelectedUrls() {
+    if (state.selectedUrlIds.isEmpty) return;
+
+    final updatedUrls = state.urls.where((url) => !state.selectedUrlIds.contains(url.id)).toList();
+
+    state = state.copyWith(
+      urls: updatedUrls,
+      clearSelectedUrls: true,
+      selectionMode: false,
+    );
+
+    _saveUrls();
+  }
+
+  // Move selected URLs to a category
+  void moveSelectedUrlsToCategory(String categoryId) {
+    if (state.selectedUrlIds.isEmpty) return;
+
+    final updatedUrls = [...state.urls];
+
+    for (int i = 0; i < updatedUrls.length; i++) {
+      if (state.selectedUrlIds.contains(updatedUrls[i].id)) {
+        updatedUrls[i] = updatedUrls[i].copyWith(categoryId: categoryId);
+      }
+    }
+
+    state = state.copyWith(
+      urls: updatedUrls,
+      clearSelectedUrls: true,
+      selectionMode: false,
+    );
+
+    _saveUrls();
+  }
+
   // Data management
   Future<void> clearData() async {
     state = state.copyWith(
