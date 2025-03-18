@@ -607,6 +607,202 @@ class SettingsPage extends ConsumerWidget {
     );
   }
 
+  Widget _buildKeyboardShortcutsInfo(BuildContext context) {
+    // Group shortcuts by category
+    final navigationShortcuts = <ShortcutActivator, String>{};
+    final urlShortcuts = <ShortcutActivator, String>{};
+    final categoryShortcuts = <ShortcutActivator, String>{};
+    final otherShortcuts = <ShortcutActivator, String>{};
+
+    KeyboardShortcuts.shortcutDescriptions.forEach((shortcut, description) {
+      if (description.contains('Go to')) {
+        navigationShortcuts[shortcut] = description;
+      } else if (description.contains('URL')) {
+        urlShortcuts[shortcut] = description;
+      } else if (description.contains('Category')) {
+        categoryShortcuts[shortcut] = description;
+      } else {
+        otherShortcuts[shortcut] = description;
+      }
+    });
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Navigation shortcuts
+        if (navigationShortcuts.isNotEmpty) ...[
+          Text(
+            'Navigation',
+            style: MacosTheme.of(context).typography.headline,
+          ),
+          const SizedBox(height: 8),
+          _buildShortcutsList(context, navigationShortcuts),
+          const SizedBox(height: 16),
+        ],
+
+        // URL management shortcuts
+        if (urlShortcuts.isNotEmpty) ...[
+          Text(
+            'URL Management',
+            style: MacosTheme.of(context).typography.headline,
+          ),
+          const SizedBox(height: 8),
+          _buildShortcutsList(context, urlShortcuts),
+          const SizedBox(height: 16),
+        ],
+
+        // Category management shortcuts
+        if (categoryShortcuts.isNotEmpty) ...[
+          Text(
+            'Category Management',
+            style: MacosTheme.of(context).typography.headline,
+          ),
+          const SizedBox(height: 8),
+          _buildShortcutsList(context, categoryShortcuts),
+          const SizedBox(height: 16),
+        ],
+
+        // Other shortcuts
+        if (otherShortcuts.isNotEmpty) ...[
+          Text(
+            'Other',
+            style: MacosTheme.of(context).typography.headline,
+          ),
+          const SizedBox(height: 8),
+          _buildShortcutsList(context, otherShortcuts),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildShortcutsList(BuildContext context, Map<ShortcutActivator, String> shortcuts) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: shortcuts.entries.map((entry) {
+        final shortcut = entry.key;
+        final description = entry.value;
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 120,
+                child: _buildShortcutDisplay(context, shortcut),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  description,
+                  style: MacosTheme.of(context).typography.body,
+                ),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildShortcutDisplay(BuildContext context, ShortcutActivator shortcut) {
+    if (shortcut is SingleActivator) {
+      final List<String> keys = [];
+
+      // Add modifiers
+      if (shortcut.meta) keys.add('⌘');
+      if (shortcut.shift) keys.add('⇧');
+      if (shortcut.alt) keys.add('⌥');
+      if (shortcut.control) keys.add('⌃');
+
+      // Add main key
+      keys.add(_getKeyLabel(shortcut.trigger));
+
+      return Row(
+        children: keys.map((key) {
+          return Padding(
+            padding: const EdgeInsets.only(right: 4),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: MacosTheme.of(context).canvasColor,
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(
+                  color: MacosColors.systemGrayColor.withOpacity(0.5),
+                ),
+              ),
+              child: Text(
+                key,
+                style: MacosTheme.of(context).typography.body.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+            ),
+          );
+        }).toList(),
+      );
+    }
+
+    return const Text('Unknown shortcut');
+  }
+
+  String _getKeyLabel(LogicalKeyboardKey key) {
+    // Common key mappings
+    final keyLabels = {
+      LogicalKeyboardKey.keyA: 'A',
+      LogicalKeyboardKey.keyB: 'B',
+      LogicalKeyboardKey.keyC: 'C',
+      LogicalKeyboardKey.keyD: 'D',
+      LogicalKeyboardKey.keyE: 'E',
+      LogicalKeyboardKey.keyF: 'F',
+      LogicalKeyboardKey.keyG: 'G',
+      LogicalKeyboardKey.keyH: 'H',
+      LogicalKeyboardKey.keyI: 'I',
+      LogicalKeyboardKey.keyJ: 'J',
+      LogicalKeyboardKey.keyK: 'K',
+      LogicalKeyboardKey.keyL: 'L',
+      LogicalKeyboardKey.keyM: 'M',
+      LogicalKeyboardKey.keyN: 'N',
+      LogicalKeyboardKey.keyO: 'O',
+      LogicalKeyboardKey.keyP: 'P',
+      LogicalKeyboardKey.keyQ: 'Q',
+      LogicalKeyboardKey.keyR: 'R',
+      LogicalKeyboardKey.keyS: 'S',
+      LogicalKeyboardKey.keyT: 'T',
+      LogicalKeyboardKey.keyU: 'U',
+      LogicalKeyboardKey.keyV: 'V',
+      LogicalKeyboardKey.keyW: 'W',
+      LogicalKeyboardKey.keyX: 'X',
+      LogicalKeyboardKey.keyY: 'Y',
+      LogicalKeyboardKey.keyZ: 'Z',
+      LogicalKeyboardKey.digit0: '0',
+      LogicalKeyboardKey.digit1: '1',
+      LogicalKeyboardKey.digit2: '2',
+      LogicalKeyboardKey.digit3: '3',
+      LogicalKeyboardKey.digit4: '4',
+      LogicalKeyboardKey.digit5: '5',
+      LogicalKeyboardKey.digit6: '6',
+      LogicalKeyboardKey.digit7: '7',
+      LogicalKeyboardKey.digit8: '8',
+      LogicalKeyboardKey.digit9: '9',
+      LogicalKeyboardKey.space: 'Space',
+      LogicalKeyboardKey.enter: 'Return',
+      LogicalKeyboardKey.escape: 'Esc',
+      LogicalKeyboardKey.backspace: '⌫',
+      LogicalKeyboardKey.delete: '⌦',
+      LogicalKeyboardKey.tab: 'Tab',
+      LogicalKeyboardKey.arrowLeft: '←',
+      LogicalKeyboardKey.arrowRight: '→',
+      LogicalKeyboardKey.arrowUp: '↑',
+      LogicalKeyboardKey.arrowDown: '↓',
+      LogicalKeyboardKey.home: 'Home',
+      LogicalKeyboardKey.end: 'End',
+      LogicalKeyboardKey.pageUp: 'Page Up',
+      LogicalKeyboardKey.pageDown: 'Page Down',
+    };
+
+    return keyLabels[key] ?? key.keyLabel;
+  }
+
   void _showClearDataConfirmationDialog(BuildContext context, WidgetRef ref) {
     showMacosAlertDialog(
       context: context,
