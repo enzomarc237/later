@@ -269,6 +269,11 @@ class AppNotifier extends Notifier<AppState> {
   Future<void> _saveCategories() async {
     try {
       await _preferencesRepository.saveCategories(state.categories);
+
+      // Create automatic backup if enabled
+      if (_autoBackupEnabled) {
+        _createAutomaticBackup();
+      }
     } catch (e) {
       debugPrint('Error saving categories: $e');
     }
@@ -277,8 +282,28 @@ class AppNotifier extends Notifier<AppState> {
   Future<void> _saveUrls() async {
     try {
       await _preferencesRepository.saveUrls(state.urls);
+
+      // Create automatic backup if enabled
+      if (_autoBackupEnabled) {
+        _createAutomaticBackup();
+      }
     } catch (e) {
       debugPrint('Error saving URLs: $e');
+    }
+  }
+
+  // Create an automatic backup with a standard naming convention
+  Future<void> _createAutomaticBackup() async {
+    try {
+      final settings = await _preferencesRepository.getSettings();
+      await _backupService.createBackup(
+        categories: state.categories,
+        urls: state.urls,
+        settings: settings,
+        backupName: 'auto_backup.json',
+      );
+    } catch (e) {
+      debugPrint('Error creating automatic backup: $e');
     }
   }
 }
