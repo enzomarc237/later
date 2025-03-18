@@ -492,7 +492,6 @@ class SettingsPage extends ConsumerWidget {
                                   _showBackupHistoryDialog(context, ref); // Refresh the dialog
                                 }
                               },
-                              tooltip: 'Delete this backup',
                             ),
                           ],
                         ),
