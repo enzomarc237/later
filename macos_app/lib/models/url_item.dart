@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 
+import '../utils/url_validator.dart';
+
 @immutable
 class UrlItem {
   final String id;
@@ -11,6 +13,8 @@ class UrlItem {
   final DateTime createdAt;
   final DateTime updatedAt;
   final Map<String, dynamic>? metadata;
+  final UrlStatus status;
+  final DateTime? lastChecked;
 
   UrlItem({
     String? id,
@@ -21,6 +25,8 @@ class UrlItem {
     DateTime? createdAt,
     DateTime? updatedAt,
     this.metadata,
+    this.status = UrlStatus.unknown,
+    this.lastChecked,
   })  : id = id ?? const Uuid().v4(),
         createdAt = createdAt ?? DateTime.now(),
         updatedAt = updatedAt ?? DateTime.now();
@@ -31,6 +37,8 @@ class UrlItem {
     String? description,
     String? categoryId,
     Map<String, dynamic>? metadata,
+    UrlStatus? status,
+    DateTime? lastChecked,
   }) {
     return UrlItem(
       id: id,
@@ -41,6 +49,8 @@ class UrlItem {
       createdAt: createdAt,
       updatedAt: DateTime.now(),
       metadata: metadata ?? this.metadata,
+      status: status ?? this.status,
+      lastChecked: lastChecked ?? this.lastChecked,
     );
   }
 
@@ -54,6 +64,8 @@ class UrlItem {
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
       'metadata': metadata,
+      'status': status.index,
+      'lastChecked': lastChecked?.toIso8601String(),
     };
   }
 
@@ -67,32 +79,25 @@ class UrlItem {
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
       metadata: json['metadata'] as Map<String, dynamic>?,
+      status: json['status'] != null ? UrlStatus.values[json['status'] as int] : UrlStatus.unknown,
+      lastChecked: json['lastChecked'] != null ? DateTime.parse(json['lastChecked'] as String) : null,
     );
   }
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-  
-    return other is UrlItem &&
-      other.id == id &&
-      other.url == url &&
-      other.title == title &&
-      other.description == description &&
-      other.categoryId == categoryId;
+
+    return other is UrlItem && other.id == id && other.url == url && other.title == title && other.description == description && other.categoryId == categoryId && other.status == status;
   }
 
   @override
   int get hashCode {
-    return id.hashCode ^
-      url.hashCode ^
-      title.hashCode ^
-      description.hashCode ^
-      categoryId.hashCode;
+    return id.hashCode ^ url.hashCode ^ title.hashCode ^ description.hashCode ^ categoryId.hashCode ^ status.hashCode;
   }
 
   @override
   String toString() {
-    return 'UrlItem(id: $id, url: $url, title: $title, categoryId: $categoryId)';
+    return 'UrlItem(id: $id, url: $url, title: $title, categoryId: $categoryId, status: ${status.name})';
   }
 }
