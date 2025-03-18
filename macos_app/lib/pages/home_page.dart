@@ -1179,6 +1179,93 @@ class _HomePageState extends ConsumerState<HomePage> {
     }
   }
 
+  // Fetch metadata for a URL and update dialog fields
+  Future<void> _fetchMetadataForDialog(
+    BuildContext context,
+    TextEditingController urlController,
+    TextEditingController titleController,
+    TextEditingController descriptionController,
+  ) async {
+    final urlString = urlController.text.trim();
+    if (urlString.isEmpty) {
+      _showErrorDialog(context, 'URL Required', 'Please enter a URL to fetch metadata.');
+      return;
+    }
+
+    // Show loading dialog
+    bool isCancelled = false;
+    showMacosAlertDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => MacosAlertDialog(
+        appIcon: const MacosIcon(
+          CupertinoIcons.globe,
+          size: 56,
+          color: MacosColors.systemBlueColor,
+        ),
+        title: const Text('Fetching Metadata'),
+        message: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 16),
+            const ProgressCircle(),
+            const SizedBox(height: 16),
+            Text('Fetching metadata for $urlString...'),
+          ],
+        ),
+        primaryButton: PushButton(
+          controlSize: ControlSize.large,
+          onPressed: () {
+            isCancelled = true;
+            Navigator.of(context).pop();
+          },
+          child: const Text('Cancel'),
+        ),
+      ),
+    );
+
+    if (isCancelled) return;
+
+    try {
+      // Fetch metadata
+      final metadata = await ref.read(metadataServiceProvider).fetchMetadata(urlString);
+
+      // Close the loading dialog
+      if (context.mounted) {
+        Navigator.of(context).pop();
+      }
+
+      if (isCancelled || !context.mounted) return;
+
+      // Update the text fields if metadata was found
+      if (metadata.error == null) {
+        if (metadata.title != null && metadata.title!.isNotEmpty) {
+          titleController.text = metadata.title!;
+        }
+
+        if (metadata.description != null && metadata.description!.isNotEmpty) {
+          descriptionController.text = metadata.description!;
+        }
+
+        // Show success message
+        _showSuccessDialog(context, 'Metadata Fetched', 'Successfully fetched metadata for the URL.');
+      } else {
+        // Show error message
+        _showErrorDialog(context, 'Metadata Error', 'Error fetching metadata: ${metadata.error}');
+      }
+    } catch (e) {
+      // Close the loading dialog
+      if (context.mounted) {
+        Navigator.of(context).pop();
+      }
+
+      if (context.mounted) {
+        // Show error message
+        _showErrorDialog(context, 'Metadata Error', 'Error fetching metadata: $e');
+      }
+    }
+  }
+
   // Validate a URL and show the result
   Future<void> _validateUrl(BuildContext context, UrlItem url) async {
     // Show loading dialog
