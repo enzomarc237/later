@@ -674,9 +674,24 @@ class _HomePageState extends ConsumerState<HomePage> {
               controller: titleController,
             ),
             const SizedBox(height: 8),
-            MacosTextField(
-              placeholder: 'URL',
-              controller: urlController,
+            Row(
+              children: [
+                Expanded(
+                  child: MacosTextField(
+                    placeholder: 'URL',
+                    controller: urlController,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                PushButton(
+                  controlSize: ControlSize.small,
+                  secondary: true,
+                  onPressed: () {
+                    _fetchMetadataForDialog(context, urlController, titleController, descriptionController);
+                  },
+                  child: const Text('Fetch Metadata'),
+                ),
+              ],
             ),
             const SizedBox(height: 8),
             MacosTextField(
