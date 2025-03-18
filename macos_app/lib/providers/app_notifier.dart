@@ -82,6 +82,10 @@ class AppNotifier extends Notifier<AppState> {
     _preferencesRepository = ref.read(preferencesRepositoryProvider);
     _backupService = ref.read(backupServiceProvider);
 
+    // Initialize auto backup setting from settings
+    final settings = ref.read(settingsNotifier);
+    _autoBackupEnabled = settings.autoBackupEnabled;
+
     // Load initial state
     final initialState = AppState(
       message: 'initialized',
