@@ -138,7 +138,7 @@
 - [x] Implement bulk operations (select multiple URLs to delete or move)
 - [ ] Add drag-and-drop for organizing URLs between categories
 - [ ] Implement auto-categorization based on URL patterns or content
-- [ ] Add URL validation to check for dead links
+- [x] Add URL validation to check for dead links
 - [ ] Auto-fetch favicons and metadata from websites
 - [ ] Add preview thumbnails for URLs
 
