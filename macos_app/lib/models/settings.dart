@@ -88,16 +88,16 @@ class Settings {
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
 
-    return other is Settings && other.themeMode == themeMode && other.dataFolderPath == dataFolderPath && other.showSystemTrayIcon == showSystemTrayIcon && other.startMinimized == startMinimized && other.autoImportFromClipboard == autoImportFromClipboard && other.autoBackupEnabled == autoBackupEnabled && other.maxBackups == maxBackups;
+    return other is Settings && other.themeMode == themeMode && other.dataFolderPath == dataFolderPath && other.showSystemTrayIcon == showSystemTrayIcon && other.startMinimized == startMinimized && other.autoImportFromClipboard == autoImportFromClipboard && other.autoBackupEnabled == autoBackupEnabled && other.maxBackups == maxBackups && other.customThemeId == customThemeId && other.useCustomTheme == useCustomTheme;
   }
 
   @override
   int get hashCode {
-    return themeMode.hashCode ^ dataFolderPath.hashCode ^ showSystemTrayIcon.hashCode ^ startMinimized.hashCode ^ autoImportFromClipboard.hashCode ^ autoBackupEnabled.hashCode ^ maxBackups.hashCode;
+    return themeMode.hashCode ^ dataFolderPath.hashCode ^ showSystemTrayIcon.hashCode ^ startMinimized.hashCode ^ autoImportFromClipboard.hashCode ^ autoBackupEnabled.hashCode ^ maxBackups.hashCode ^ customThemeId.hashCode ^ useCustomTheme.hashCode;
   }
 
   @override
   String toString() {
-    return 'Settings(themeMode: $themeMode, dataFolderPath: $dataFolderPath, showSystemTrayIcon: $showSystemTrayIcon, startMinimized: $startMinimized, autoImportFromClipboard: $autoImportFromClipboard, autoBackupEnabled: $autoBackupEnabled, maxBackups: $maxBackups)';
+    return 'Settings(themeMode: $themeMode, dataFolderPath: $dataFolderPath, showSystemTrayIcon: $showSystemTrayIcon, startMinimized: $startMinimized, autoImportFromClipboard: $autoImportFromClipboard, autoBackupEnabled: $autoBackupEnabled, maxBackups: $maxBackups, customThemeId: $customThemeId, useCustomTheme: $useCustomTheme)';
   }
 }
