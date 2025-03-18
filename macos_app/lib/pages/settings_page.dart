@@ -21,11 +21,11 @@ class SettingsPage extends ConsumerWidget {
       toolBar: ToolBar(
         leading: MacosIconButton(
           icon: const MacosIcon(
-            CupertinoIcons.sidebar_left,
+            CupertinoIcons.arrow_left,
             size: 20,
           ),
           onPressed: () {
-            MacosWindowScope.of(context).toggleSidebar();
+            Navigator.of(context).pop();
           },
         ),
         title: const Text('Settings'),
@@ -107,7 +107,7 @@ class SettingsPage extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Theme',
+          'Theme Mode',
           style: MacosTheme.of(context).typography.headline,
         ),
         const SizedBox(height: 8),
@@ -120,6 +120,10 @@ class SettingsPage extends ConsumerWidget {
             _buildThemeRadioButton(context, ref, settings, ThemeMode.dark, 'Dark'),
           ],
         ),
+        const SizedBox(height: 24),
+
+        // Custom theme selector
+        _buildCustomThemeSelector(context, ref, settings),
       ],
     );
   }
