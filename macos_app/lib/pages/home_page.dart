@@ -166,7 +166,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   // Build actions for normal mode (no selection)
-  List<Widget> _buildNormalModeActions(BuildContext context, String? selectedCategoryId) {
+  List<ToolbarItem> _buildNormalModeActions(BuildContext context, String? selectedCategoryId) {
     return [
       ToolBarIconButton(
         label: 'Add URL',
@@ -207,7 +207,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   // Build actions for selection mode
-  List<Widget> _buildSelectionModeActions(BuildContext context, AppState appState) {
+  List<ToolbarItem> _buildSelectionModeActions(BuildContext context, AppState appState) {
     final appNotifierRef = ref.read(appNotifier.notifier);
     final hasSelections = appState.selectedUrlCount > 0;
     
@@ -270,7 +270,6 @@ class _HomePageState extends ConsumerState<HomePage> {
                     style: MacosTheme.of(context).typography.title3,
                     overflow: TextOverflow.ellipsis,
                   ),
-                ),
                 if (!appState.selectionMode) ...[
                   Row(
                     children: [
