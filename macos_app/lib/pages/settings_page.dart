@@ -417,6 +417,7 @@ class SettingsPage extends ConsumerWidget {
                                 ],
                               ),
                             ),
+                            // Restore backup button
                             MacosIconButton(
                               icon: const MacosIcon(CupertinoIcons.arrow_counterclockwise),
                               onPressed: () async {
