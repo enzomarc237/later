@@ -276,6 +276,11 @@ class _HomePageState extends ConsumerState<HomePage> {
                   ),
                   const SizedBox(width: 8),
                 ],
+                // Display favicon if available
+                if (url.metadata != null && url.metadata!['faviconUrl'] != null) ...[
+                  _buildFaviconImage(url.metadata!['faviconUrl'] as String?),
+                  const SizedBox(width: 8),
+                ],
                 Expanded(
                   child: Text(
                     url.title,
