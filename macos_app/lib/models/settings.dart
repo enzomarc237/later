@@ -79,6 +79,8 @@ class Settings {
       autoImportFromClipboard: json['autoImportFromClipboard'] as bool? ?? false,
       autoBackupEnabled: json['autoBackupEnabled'] as bool? ?? true,
       maxBackups: json['maxBackups'] as int? ?? 10,
+      customThemeId: json['customThemeId'] as String? ?? 'default_light',
+      useCustomTheme: json['useCustomTheme'] as bool? ?? false,
     );
   }
 
