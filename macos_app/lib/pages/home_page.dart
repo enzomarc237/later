@@ -165,6 +165,9 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   // Build actions for normal mode (no selection)
   List<ToolbarItem> _buildNormalModeActions(BuildContext context, String? selectedCategoryId) {
+    final appState = ref.read(appNotifier);
+    final hasUrls = appState.visibleUrls.isNotEmpty;
+
     return [
       ToolBarIconButton(
         label: 'Add URL',
@@ -172,6 +175,16 @@ class _HomePageState extends ConsumerState<HomePage> {
         onPressed: () {
           _showAddUrlDialog(context, selectedCategoryId);
         },
+        showLabel: true,
+      ),
+      ToolBarIconButton(
+        label: 'Validate URLs',
+        icon: const MacosIcon(CupertinoIcons.checkmark_shield),
+        onPressed: hasUrls
+            ? () {
+                _validateVisibleUrls(context);
+              }
+            : null,
         showLabel: true,
       ),
       ToolBarIconButton(
