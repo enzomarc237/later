@@ -4,6 +4,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../models/models.dart';
 import '../utils/backup_service.dart';
+import '../utils/metadata_service.dart';
 import '../utils/url_validator.dart';
 import 'providers.dart';
 
