@@ -1,11 +1,13 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:macos_ui/macos_ui.dart';
 
 import '../models/models.dart';
 import '../providers/providers.dart';
+import '../utils/keyboard_shortcuts.dart';
 
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
