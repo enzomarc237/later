@@ -480,9 +480,9 @@ class SettingsPage extends ConsumerWidget {
                                   ),
                                 );
                               },
-                              tooltip: 'Restore this backup',
                             ),
                             const SizedBox(width: 8),
+                            // Delete backup button
                             MacosIconButton(
                               icon: const MacosIcon(CupertinoIcons.trash),
                               onPressed: () async {
