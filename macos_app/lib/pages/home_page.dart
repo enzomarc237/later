@@ -994,6 +994,110 @@ class _HomePageState extends ConsumerState<HomePage> {
     final formatter = DateFormat('MMM d, yyyy');
     return formatter.format(dateTime);
   }
+
+  // Validate a URL and show the result
+  Future<void> _validateUrl(BuildContext context, UrlItem url) async {
+    // Show loading dialog
+    showMacosAlertDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => MacosAlertDialog(
+        appIcon: const MacosIcon(
+          CupertinoIcons.link,
+          size: 56,
+          color: MacosColors.systemBlueColor,
+        ),
+        title: const Text('Validating URL'),
+        message: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 16),
+            const ProgressCircle(),
+            const SizedBox(height: 16),
+            Text('Checking if "${url.title}" is accessible...'),
+          ],
+        ),
+      ),
+    );
+
+    // Validate the URL
+    final status = await ref.read(appNotifier.notifier).validateUrl(url.id);
+
+    // Close the loading dialog
+    if (context.mounted) {
+      Navigator.of(context).pop();
+    }
+
+    // Show the result
+    if (context.mounted) {
+      String title;
+      String message;
+      MacosIcon icon;
+
+      switch (status) {
+        case UrlStatus.valid:
+          title = 'URL is Valid';
+          message = 'The URL "${url.title}" is accessible.';
+          icon = const MacosIcon(
+            CupertinoIcons.check_mark_circled,
+            size: 56,
+            color: MacosColors.systemGreenColor,
+          );
+          break;
+        case UrlStatus.invalid:
+          title = 'URL is Invalid';
+          message = 'The URL "${url.title}" returned an error status code.';
+          icon = const MacosIcon(
+            CupertinoIcons.exclamationmark_circle,
+            size: 56,
+            color: MacosColors.systemRedColor,
+          );
+          break;
+        case UrlStatus.timeout:
+          title = 'URL Timed Out';
+          message = 'The request to "${url.title}" timed out.';
+          icon = const MacosIcon(
+            CupertinoIcons.clock,
+            size: 56,
+            color: MacosColors.systemOrangeColor,
+          );
+          break;
+        case UrlStatus.error:
+          title = 'Error Validating URL';
+          message = 'There was an error validating "${url.title}".';
+          icon = const MacosIcon(
+            CupertinoIcons.exclamationmark_circle,
+            size: 56,
+            color: MacosColors.systemRedColor,
+          );
+          break;
+        default:
+          title = 'Validation Complete';
+          message = 'The URL "${url.title}" has been checked.';
+          icon = const MacosIcon(
+            CupertinoIcons.info_circle,
+            size: 56,
+            color: MacosColors.systemBlueColor,
+          );
+      }
+
+      showMacosAlertDialog(
+        context: context,
+        builder: (_) => MacosAlertDialog(
+          appIcon: icon,
+          title: Text(title),
+          message: Text(message),
+          primaryButton: PushButton(
+            controlSize: ControlSize.large,
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: const Text('OK'),
+          ),
+        ),
+      );
+    }
+  }
 }
 
 class MacosCard extends StatelessWidget {
