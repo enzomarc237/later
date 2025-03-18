@@ -30,3 +30,8 @@ final backupServiceProvider = Provider<BackupService>((ref) {
   final fileStorage = ref.watch(fileStorageServiceProvider);
   return BackupService(fileStorage: fileStorage);
 });
+
+// MetadataService provider for fetching website metadata and favicons
+final metadataServiceProvider = Provider<MetadataService>((ref) {
+  return MetadataService();
+});
