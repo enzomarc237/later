@@ -18,6 +18,9 @@ class SettingsNotifier extends Notifier<Settings> {
   Future<void> _loadSettings() async {
     final settings = await _preferencesRepository.getSettings();
     state = settings;
+    
+    // Initialize the dataFolderPathProvider with the current data folder path
+    ref.read(dataFolderPathProvider.notifier).state = settings.dataFolderPath;
   }
 
   Future<void> setThemeMode(ThemeMode themeMode) async {
@@ -28,6 +31,9 @@ class SettingsNotifier extends Notifier<Settings> {
   Future<void> setDataFolderPath(String path) async {
     state = state.copyWith(dataFolderPath: path);
     await _saveSettings();
+    
+    // Update the dataFolderPathProvider with the new path
+    ref.read(dataFolderPathProvider.notifier).state = path;
   }
 
   Future<void> setShowSystemTrayIcon(bool show) async {
