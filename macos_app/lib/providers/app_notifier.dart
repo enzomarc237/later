@@ -108,6 +108,7 @@ class AppNotifier extends Notifier<AppState> {
   late PreferencesRepository _preferencesRepository;
   late BackupService _backupService;
   late UrlValidator _urlValidator;
+  late MetadataService _metadataService;
 
   // Settings for automatic backups
   bool _autoBackupEnabled = true;
