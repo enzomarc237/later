@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../utils/backup_service.dart';
 import '../utils/file_storage_service.dart';
+import '../utils/metadata_service.dart';
 
 // Export all providers
 export 'preferences_repository.dart';
