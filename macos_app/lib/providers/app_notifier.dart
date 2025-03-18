@@ -230,20 +230,89 @@ class AppNotifier extends Notifier<AppState> {
   }
 
   // URL management
-  void addUrl(UrlItem url) {
-    final updatedUrls = [...state.urls, url];
+
+  /// Fetches metadata for a URL
+  Future<WebsiteMetadata?> _fetchMetadata(String url) async {
+    try {
+      return await _metadataService.fetchMetadata(url);
+    } catch (e) {
+      debugPrint('Error fetching metadata: $e');
+      return null;
+    }
+  }
+
+  /// Enriches a URL with metadata
+  UrlItem enrichUrlWithMetadata(UrlItem url, WebsiteMetadata metadata) {
+    // Only update title and description if they're empty
+    final title = url.title.isEmpty ? metadata.title : url.title;
+    final description = url.description?.isEmpty ?? true ? metadata.description : url.description;
+
+    // Create or update metadata map
+    final existingMetadata = url.metadata ?? {};
+    final updatedMetadata = {
+      ...existingMetadata,
+      'faviconUrl': metadata.faviconUrl,
+      'siteName': metadata.siteName,
+      'imageUrl': metadata.imageUrl,
+      'lastFetched': DateTime.now().toIso8601String(),
+    };
+
+    return url.copyWith(
+      title: title,
+      description: description,
+      metadata: updatedMetadata,
+    );
+  }
+
+  /// Adds a URL to the app, optionally fetching metadata
+  Future<void> addUrl(UrlItem url, {bool fetchMetadata = true}) async {
+    // Add the URL immediately for better UX
+    var updatedUrl = url;
+    final updatedUrls = [...state.urls, updatedUrl];
     state = state.copyWith(urls: updatedUrls);
+
+    // Fetch metadata if requested
+    if (fetchMetadata) {
+      final metadata = await _fetchMetadata(url.url);
+      if (metadata != null) {
+        // Update the URL with metadata
+        updatedUrl = enrichUrlWithMetadata(url, metadata);
+
+        // Update the state with the enriched URL
+        final index = updatedUrls.indexOf(url);
+        if (index >= 0) {
+          updatedUrls[index] = updatedUrl;
+          state = state.copyWith(urls: updatedUrls);
+        }
+      }
+    }
+
     _saveUrls();
   }
 
-  void updateUrl(UrlItem url) {
+  /// Updates a URL, optionally fetching new metadata
+  Future<void> updateUrl(UrlItem url, {bool fetchMetadata = false}) async {
     final index = state.urls.indexWhere((u) => u.id == url.id);
-    if (index >= 0) {
-      final updatedUrls = [...state.urls];
-      updatedUrls[index] = url;
-      state = state.copyWith(urls: updatedUrls);
-      _saveUrls();
+    if (index < 0) return;
+
+    // Update the URL immediately for better UX
+    var updatedUrl = url;
+    final updatedUrls = [...state.urls];
+    updatedUrls[index] = updatedUrl;
+    state = state.copyWith(urls: updatedUrls);
+
+    // Fetch metadata if requested
+    if (fetchMetadata) {
+      final metadata = await _fetchMetadata(url.url);
+      if (metadata != null) {
+        // Update the URL with metadata
+        updatedUrl = enrichUrlWithMetadata(url, metadata);
+        updatedUrls[index] = updatedUrl;
+        state = state.copyWith(urls: updatedUrls);
+      }
     }
+
+    _saveUrls();
   }
 
   void deleteUrl(String urlId) {
