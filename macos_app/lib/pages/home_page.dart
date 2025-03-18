@@ -978,6 +978,13 @@ class _HomePageState extends ConsumerState<HomePage> {
       ),
     );
   }
+
+  // Format a DateTime to a user-friendly string
+  String _formatDate(DateTime dateTime) {
+    // Format as "MMM d, yyyy" (e.g., "Jan 1, 2023")
+    final formatter = DateFormat('MMM d, yyyy');
+    return formatter.format(dateTime);
+  }
 }
 
 class MacosCard extends StatelessWidget {
