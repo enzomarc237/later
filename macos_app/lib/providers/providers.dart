@@ -1,6 +1,9 @@
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../utils/file_storage_service.dart';
+import 'settings_notifier.dart';
+
 // Export all providers
 export 'preferences_repository.dart';
 export 'settings_notifier.dart';
@@ -11,3 +14,9 @@ final sharedPreferencesProvider = Provider<SharedPreferences>(
   (ref) => throw UnimplementedError(),
   name: 'SharedPreferencesProvider',
 );
+
+// FileStorageService provider that uses the data folder path from settings
+final fileStorageServiceProvider = Provider<FileStorageService>((ref) {
+  final settings = ref.watch(settingsNotifier);
+  return FileStorageService(basePath: settings.dataFolderPath);
+});
