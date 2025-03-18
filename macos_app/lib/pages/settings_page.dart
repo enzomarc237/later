@@ -55,6 +55,13 @@ class SettingsPage extends ConsumerWidget {
                   _buildClearDataButton(context, ref),
                   const SizedBox(height: 32),
                   Text(
+                    'Backups',
+                    style: MacosTheme.of(context).typography.title1,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildBackupSettings(context, ref, settings),
+                  const SizedBox(height: 32),
+                  Text(
                     'System Tray',
                     style: MacosTheme.of(context).typography.title1,
                   ),
