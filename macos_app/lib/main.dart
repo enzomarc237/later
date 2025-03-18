@@ -213,7 +213,30 @@ class MainApp extends ConsumerWidget {
       ),
       color: MacosColors.transparent,
       themeMode: settings.themeMode,
-      home: const MainView(),
+      home: Builder(
+        builder: (context) {
+          // Create shortcuts map
+          final shortcuts = KeyboardShortcuts.getApplicationShortcuts(context, ref);
+
+          return Shortcuts(
+            shortcuts: Map.fromEntries(
+              shortcuts.keys.map((key) => MapEntry(key, VoidCallbackIntent(shortcuts[key]!))),
+            ),
+            child: Actions(
+              actions: <Type, Action<Intent>>{
+                VoidCallbackIntent: VoidCallbackAction(),
+              },
+              child: Focus(
+                autofocus: true,
+                child: const MainView(),
+              ),
+            ),
+          );
+        },
+      ),
+      routes: {
+        '/settings': (context) => const SettingsPage(),
+      },
       debugShowCheckedModeBanner: false,
     );
   }
