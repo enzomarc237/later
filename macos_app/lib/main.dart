@@ -204,16 +204,43 @@ class MainApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(settingsNotifier);
 
-    return MacosApp(
-      navigatorKey: DialogService.navigatorKey,
-      title: 'Later',
-      theme: MacosThemeData.light(),
-      darkTheme: MacosThemeData.dark().copyWith(
+    // Determine which theme to use
+    MacosThemeData lightTheme;
+    MacosThemeData darkTheme;
+
+    if (settings.useCustomTheme) {
+      // Use custom theme
+      final customTheme = settings.selectedTheme;
+      if (customTheme.isDark) {
+        // If the selected theme is dark, use it as dark theme and default light theme
+        darkTheme = customTheme.toMacosThemeData();
+        lightTheme = MacosThemeData.light();
+      } else {
+        // If the selected theme is light, use it as light theme and default dark theme
+        lightTheme = customTheme.toMacosThemeData();
+        darkTheme = MacosThemeData.dark().copyWith(
+          primaryColor: Colors.white,
+          iconButtonTheme: const MacosIconButtonThemeData(
+            disabledColor: Colors.white,
+          ),
+        );
+      }
+    } else {
+      // Use default themes
+      lightTheme = MacosThemeData.light();
+      darkTheme = MacosThemeData.dark().copyWith(
         primaryColor: Colors.white,
         iconButtonTheme: const MacosIconButtonThemeData(
           disabledColor: Colors.white,
         ),
-      ),
+      );
+    }
+
+    return MacosApp(
+      navigatorKey: DialogService.navigatorKey,
+      title: 'Later',
+      theme: lightTheme,
+      darkTheme: darkTheme,
       color: MacosColors.transparent,
       themeMode: settings.themeMode,
       home: Builder(
