@@ -556,10 +556,10 @@ class SettingsPage extends ConsumerWidget {
                                 showMacosAlertDialog(
                                   context: context,
                                   builder: (dialogContext) => MacosAlertDialog(
-                                    appIcon: const MacosIcon(
+                                    appIcon: MacosIcon(
                                       CupertinoIcons.trash,
                                       size: 56,
-                                      color: MacosColors.systemRedColor,
+                                      color: theme.brightness == Brightness.dark ? Colors.red : MacosColors.systemRedColor,
                                     ),
                                     title: const Text('Delete Backup'),
                                     message: const Text(
