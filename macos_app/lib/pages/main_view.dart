@@ -30,12 +30,13 @@ class _MainViewState extends ConsumerState<MainView> {
   Widget build(BuildContext context) {
     final appState = ref.watch(appNotifier);
     final filteredCategories = appState.categories.where((category) => _searchQuery.isEmpty || category.name.toLowerCase().contains(_searchQuery.toLowerCase())).toList();
+    final theme = MacosTheme.of(context);
 
     return MacosWindow(
-      backgroundColor: MacosColors.transparent,
+      backgroundColor: Colors.transparent,
       sidebar: Sidebar(
         decoration: BoxDecoration(
-          color: MacosTheme.of(context).canvasColor,
+          color: theme.canvasColor,
         ),
         minWidth: 200,
         // Move All URLs button to the top of the sidebar
@@ -44,7 +45,7 @@ class _MainViewState extends ConsumerState<MainView> {
           child: PushButton(
             controlSize: ControlSize.large,
             secondary: true,
-            color: appState.selectedCategoryId == null ? MacosColors.controlAccentColor : null,
+            color: appState.selectedCategoryId == null ? theme.primaryColor : null,
             onPressed: () {
               // Use the explicit clearSelectedCategory method to ensure category is unselected
               ref.read(appNotifier.notifier).clearSelectedCategory();
@@ -60,16 +61,24 @@ class _MainViewState extends ConsumerState<MainView> {
               children: [
                 MacosIcon(
                   CupertinoIcons.doc_text_search,
-                  color: appState.selectedCategoryId == null ? MacosColors.controlAccentColor : MacosColors.systemGrayColor,
+                  color: appState.selectedCategoryId == null
+                      ? theme.primaryColor
+                      : theme.brightness == Brightness.dark
+                          ? MacosColors.systemGrayColor
+                          : MacosColors.systemGrayColor,
                   size: 22.0,
                 ),
                 const SizedBox(width: 8.0),
                 Text(
                   'All URLs',
-                  style: MacosTheme.of(context).typography.body.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: appState.selectedCategoryId == null ? MacosColors.controlAccentColor : MacosColors.systemGrayColor,
-                      ),
+                  style: theme.typography.body.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: appState.selectedCategoryId == null
+                        ? theme.primaryColor
+                        : theme.brightness == Brightness.dark
+                            ? MacosColors.systemGrayColor
+                            : MacosColors.systemGrayColor,
+                  ),
                 ),
               ],
             ),
@@ -78,7 +87,7 @@ class _MainViewState extends ConsumerState<MainView> {
         builder: (context, scrollController) => Column(
           children: [
             Padding(
-              padding: const EdgeInsets.all(12.0), // Increased padding
+              padding: const EdgeInsets.all(12.0),
               child: MacosSearchField(
                 placeholder: 'Search categories',
                 controller: _searchController,
@@ -89,22 +98,25 @@ class _MainViewState extends ConsumerState<MainView> {
                 },
               ),
             ),
-            const SizedBox(height: 8.0), // Extra spacing
+            const SizedBox(height: 8.0),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Text(
                 'Categories',
-                style: MacosTheme.of(context).typography.subheadline.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: MacosColors.systemGrayColor,
-                    ),
+                style: theme.typography.subheadline.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: theme.brightness == Brightness.dark ? MacosColors.systemGrayColor : MacosColors.systemGrayColor,
+                ),
               ),
             ),
-            const SizedBox(height: 8.0), // Extra spacing
+            const SizedBox(height: 8.0),
             Expanded(
               child: appState.categories.isEmpty
-                  ? const Center(
-                      child: Text('No categories yet'),
+                  ? Center(
+                      child: Text(
+                        'No categories yet',
+                        style: theme.typography.body,
+                      ),
                     )
                   : ListView.builder(
                       controller: scrollController,
@@ -113,19 +125,24 @@ class _MainViewState extends ConsumerState<MainView> {
                         final category = filteredCategories[index];
                         final isSelected = category.id == appState.selectedCategoryId;
                         return Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0), // Added padding
+                          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
                           child: Container(
                             decoration: BoxDecoration(
-                              color: isSelected ? MacosColors.controlAccentColor.withOpacity(0.2) : Colors.transparent,
-                              borderRadius: BorderRadius.circular(8.0), // Rounded corners
+                              color: isSelected ? theme.primaryColor.withOpacity(0.2) : Colors.transparent,
+                              borderRadius: BorderRadius.circular(8.0),
                             ),
                             child: Row(
                               children: [
                                 Expanded(
                                   child: MacosListTile(
-                                    // MacosListTile doesn't have contentPadding parameter
-                                    leading: const MacosIcon(CupertinoIcons.folder),
-                                    title: Text(category.name),
+                                    leading: MacosIcon(
+                                      CupertinoIcons.folder,
+                                      color: theme.brightness == Brightness.dark ? Colors.white : Colors.black,
+                                    ),
+                                    title: Text(
+                                      category.name,
+                                      style: theme.typography.body,
+                                    ),
                                     onClick: () {
                                       ref.read(appNotifier.notifier).selectCategory(category.id);
                                       // Switch to HomePage when a category is selected
@@ -134,9 +151,10 @@ class _MainViewState extends ConsumerState<MainView> {
                                   ),
                                 ),
                                 MacosIconButton(
-                                  icon: const MacosIcon(
+                                  icon: MacosIcon(
                                     CupertinoIcons.pencil,
                                     size: 16,
+                                    color: theme.brightness == Brightness.dark ? Colors.white : Colors.black,
                                   ),
                                   padding: const EdgeInsets.only(right: 8.0),
                                   onPressed: () {
@@ -150,21 +168,27 @@ class _MainViewState extends ConsumerState<MainView> {
                       },
                     ),
             ),
-            const Divider(
-              height: 24.0, // Increased height
+            Divider(
+              height: 24.0,
               thickness: 1.0,
+              color: theme.brightness == Brightness.dark ? Colors.grey.shade800 : Colors.grey.shade300,
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0), // Added padding
+              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
               child: Container(
                 decoration: BoxDecoration(
-                  color: _pageIndex == 1 ? MacosColors.controlAccentColor.withOpacity(0.2) : Colors.transparent,
-                  borderRadius: BorderRadius.circular(8.0), // Rounded corners
+                  color: _pageIndex == 1 ? theme.primaryColor.withOpacity(0.2) : Colors.transparent,
+                  borderRadius: BorderRadius.circular(8.0),
                 ),
                 child: MacosListTile(
-                  // MacosListTile doesn't have contentPadding parameter
-                  leading: const MacosIcon(CupertinoIcons.gear),
-                  title: const Text('Settings'),
+                  leading: MacosIcon(
+                    CupertinoIcons.gear,
+                    color: theme.brightness == Brightness.dark ? Colors.white : Colors.black,
+                  ),
+                  title: Text(
+                    'Settings',
+                    style: theme.typography.body,
+                  ),
                   onClick: () {
                     setState(() => _pageIndex = 1);
                   },
@@ -172,18 +196,24 @@ class _MainViewState extends ConsumerState<MainView> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(12.0), // Increased padding
+              padding: const EdgeInsets.all(12.0),
               child: PushButton(
                 controlSize: ControlSize.regular,
                 onPressed: () {
                   _showAddCategoryDialog(context);
                 },
-                child: const Row(
+                child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    MacosIcon(CupertinoIcons.add),
-                    SizedBox(width: 8), // Increased spacing
-                    Text('Create Category'),
+                    MacosIcon(
+                      CupertinoIcons.add,
+                      color: theme.brightness == Brightness.dark ? Colors.white : Colors.black,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Create Category',
+                      style: theme.typography.body,
+                    ),
                   ],
                 ),
               ),
@@ -191,9 +221,18 @@ class _MainViewState extends ConsumerState<MainView> {
           ],
         ),
         bottom: MacosListTile(
-          leading: const MacosIcon(CupertinoIcons.app_badge),
-          title: const Text('Later'),
-          subtitle: Text('Version ${appState.appVersion}'),
+          leading: MacosIcon(
+            CupertinoIcons.app_badge,
+            color: theme.brightness == Brightness.dark ? Colors.white : Colors.black,
+          ),
+          title: Text(
+            'Later',
+            style: theme.typography.body,
+          ),
+          subtitle: Text(
+            'Version ${appState.appVersion}',
+            style: theme.typography.caption2,
+          ),
         ),
       ),
       child: IndexedStack(
@@ -212,13 +251,15 @@ class _MainViewState extends ConsumerState<MainView> {
 
   void _showAddCategoryDialog(BuildContext context) {
     final TextEditingController controller = TextEditingController();
+    final theme = MacosTheme.of(context);
+
     showMacosAlertDialog(
       context: context,
       builder: (_) => MacosAlertDialog(
-        appIcon: const MacosIcon(
+        appIcon: MacosIcon(
           CupertinoIcons.folder_badge_plus,
           size: 56,
-          color: MacosColors.systemBlueColor,
+          color: theme.primaryColor,
         ),
         title: const Text('Create New Category'),
         message: Padding(
@@ -253,13 +294,15 @@ class _MainViewState extends ConsumerState<MainView> {
 
   void _showEditCategoryDialog(BuildContext context, Category category) {
     final TextEditingController controller = TextEditingController(text: category.name);
+    final theme = MacosTheme.of(context);
+
     showMacosAlertDialog(
       context: context,
       builder: (_) => MacosAlertDialog(
-        appIcon: const MacosIcon(
+        appIcon: MacosIcon(
           CupertinoIcons.folder,
           size: 56,
-          color: MacosColors.systemBlueColor,
+          color: theme.primaryColor,
         ),
         title: const Text('Edit Category'),
         message: Padding(
