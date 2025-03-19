@@ -202,10 +202,10 @@ class SettingsPage extends ConsumerWidget {
                       showMacosAlertDialog(
                         context: context,
                         builder: (_) => MacosAlertDialog(
-                          appIcon: const MacosIcon(
+                          appIcon: MacosIcon(
                             CupertinoIcons.exclamationmark_triangle,
                             size: 56,
-                            color: MacosColors.systemOrangeColor,
+                            color: theme.brightness == Brightness.dark ? Colors.orange : MacosColors.systemOrangeColor,
                           ),
                           title: const Text('Permission Error'),
                           message: Text(
