@@ -53,10 +53,10 @@ class _ImportUrlsDialogState extends ConsumerState<ImportUrlsDialog> {
     final appState = ref.watch(appNotifier);
 
     return MacosAlertDialog(
-      appIcon: const MacosIcon(
+      appIcon: MacosIcon(
         CupertinoIcons.arrow_down_doc,
         size: 56,
-        color: MacosColors.systemBlueColor,
+        color: MacosTheme.of(context).primaryColor,
       ),
       title: const Text('Import URLs'),
       message: Column(
@@ -103,6 +103,7 @@ class _ImportUrlsDialogState extends ConsumerState<ImportUrlsDialog> {
             constraints: const BoxConstraints(
               maxHeight: 400,
               maxWidth: 1600,
+              minWidth: 900.0,
             ),
             child: MacosScrollbar(
               child: ListView.builder(
@@ -141,10 +142,10 @@ class _ImportUrlsDialogState extends ConsumerState<ImportUrlsDialog> {
                               Text(
                                 url.url,
                                 style: MacosTheme.of(context).typography.body.copyWith(
-                                      color: MacosColors.systemBlueColor,
+                                      color: MacosTheme.of(context).primaryColor,
                                     ),
                                 overflow: TextOverflow.ellipsis,
-                                maxLines: 2,
+                                maxLines: 1,
                               ),
                               if (url.description != null && url.description!.isNotEmpty) ...[
                                 const SizedBox(height: 4),
@@ -179,7 +180,7 @@ class _ImportUrlsDialogState extends ConsumerState<ImportUrlsDialog> {
                 appIcon: const MacosIcon(
                   CupertinoIcons.exclamationmark_circle,
                   size: 56,
-                  color: MacosColors.systemRedColor,
+                  color: MacosTheme.of(context).brightness == Brightness.dark ? Colors.red : MacosColors.systemRedColor,
                 ),
                 title: const Text('Error'),
                 message: const Text('Please enter a category name.'),
@@ -211,7 +212,7 @@ class _ImportUrlsDialogState extends ConsumerState<ImportUrlsDialog> {
                 appIcon: const MacosIcon(
                   CupertinoIcons.exclamationmark_circle,
                   size: 56,
-                  color: MacosColors.systemRedColor,
+                  color: MacosTheme.of(context).brightness == Brightness.dark ? Colors.red : MacosColors.systemRedColor,
                 ),
                 title: const Text('Error'),
                 message: const Text('Please select at least one URL to import.'),
