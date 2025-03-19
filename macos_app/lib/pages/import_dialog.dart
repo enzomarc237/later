@@ -177,7 +177,7 @@ class _ImportUrlsDialogState extends ConsumerState<ImportUrlsDialog> {
             showMacosAlertDialog(
               context: context,
               builder: (_) => MacosAlertDialog(
-                appIcon: const MacosIcon(
+                appIcon: MacosIcon(
                   CupertinoIcons.exclamationmark_circle,
                   size: 56,
                   color: MacosTheme.of(context).brightness == Brightness.dark ? Colors.red : MacosColors.systemRedColor,
@@ -209,7 +209,7 @@ class _ImportUrlsDialogState extends ConsumerState<ImportUrlsDialog> {
             showMacosAlertDialog(
               context: context,
               builder: (_) => MacosAlertDialog(
-                appIcon: const MacosIcon(
+                appIcon: MacosIcon(
                   CupertinoIcons.exclamationmark_circle,
                   size: 56,
                   color: MacosTheme.of(context).brightness == Brightness.dark ? Colors.red : MacosColors.systemRedColor,
