@@ -488,10 +488,10 @@ class SettingsPage extends ConsumerWidget {
                                   showMacosAlertDialog(
                                     context: context,
                                     builder: (dialogContext) => MacosAlertDialog(
-                                      appIcon: const MacosIcon(
+                                      appIcon: MacosIcon(
                                         CupertinoIcons.arrow_counterclockwise,
                                         size: 56,
-                                        color: MacosColors.systemBlueColor,
+                                        color: theme.primaryColor,
                                       ),
                                       title: const Text('Restore Backup'),
                                       message: const Text(
