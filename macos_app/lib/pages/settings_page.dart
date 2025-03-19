@@ -155,6 +155,7 @@ class SettingsPage extends ConsumerWidget {
   }
 
   Widget _buildDataFolderSelector(BuildContext context, WidgetRef ref, Settings settings) {
+    final theme = MacosTheme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
