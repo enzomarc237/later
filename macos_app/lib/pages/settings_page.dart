@@ -233,7 +233,7 @@ class SettingsPage extends ConsumerWidget {
         Text(
           'Note: The app needs full access to the selected folder. If you experience permission issues, try selecting a folder within your Documents directory.',
           style: MacosTheme.of(context).typography.caption1.copyWith(
-                color: MacosColors.systemGrayColor,
+                color: MacosTheme.of(context).brightness == Brightness.dark ? Colors.grey.shade400 : MacosColors.systemGrayColor,
               ),
         ),
       ],
