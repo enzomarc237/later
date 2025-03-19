@@ -374,10 +374,10 @@ class SettingsPage extends ConsumerWidget {
                   showMacosAlertDialog(
                     context: context,
                     builder: (_) => MacosAlertDialog(
-                      appIcon: const MacosIcon(
+                      appIcon: MacosIcon(
                         CupertinoIcons.check_mark_circled,
                         size: 56,
-                        color: MacosColors.systemGreenColor,
+                        color: theme.primaryColor,
                       ),
                       title: const Text('Backup Created'),
                       message: Text('Backup created successfully: $backupName'),
