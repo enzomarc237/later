@@ -48,8 +48,27 @@ extension UrlStatusExtension on UrlStatus {
   /// Returns true if the URL status is unknown
   bool get isUnknown => this == UrlStatus.unknown;
 
-  /// Returns the appropriate color for this status
+  /// Returns the appropriate color for this status based on the theme
   /// This can be used to visually indicate the status in the UI
+  Color getColor(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    switch (this) {
+      case UrlStatus.unknown:
+        return isDark ? Colors.grey.shade600 : Colors.grey.shade400;
+      case UrlStatus.valid:
+        return isDark ? Colors.green.shade400 : Colors.green.shade700;
+      case UrlStatus.invalid:
+        return isDark ? Colors.red.shade400 : Colors.red.shade700;
+      case UrlStatus.timeout:
+        return isDark ? Colors.orange.shade400 : Colors.orange.shade700;
+      case UrlStatus.error:
+        return isDark ? Colors.red.shade400 : Colors.red.shade700;
+    }
+  }
+
+  /// Legacy color getter for backward compatibility
+  /// Consider using getColor(context) instead for theme-aware colors
   Color get color {
     switch (this) {
       case UrlStatus.unknown:
