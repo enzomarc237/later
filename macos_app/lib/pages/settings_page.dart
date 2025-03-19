@@ -780,7 +780,7 @@ class SettingsPage extends ConsumerWidget {
                 color: MacosTheme.of(context).canvasColor,
                 borderRadius: BorderRadius.circular(4),
                 border: Border.all(
-                  color: MacosColors.systemGrayColor.withOpacity(0.5),
+                  color: MacosTheme.of(context).brightness == Brightness.dark ? Colors.grey.shade700 : MacosColors.systemGrayColor.withOpacity(0.5),
                 ),
               ),
               child: Text(
