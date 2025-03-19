@@ -261,7 +261,7 @@ class SettingsPage extends ConsumerWidget {
         Text(
           'This will delete all categories and URLs',
           style: MacosTheme.of(context).typography.caption1.copyWith(
-                color: MacosColors.systemGrayColor,
+                color: MacosTheme.of(context).brightness == Brightness.dark ? Colors.grey.shade400 : MacosColors.systemGrayColor,
               ),
         ),
       ],
