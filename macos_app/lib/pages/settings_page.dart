@@ -907,10 +907,14 @@ class SettingsPage extends ConsumerWidget {
                   width: 100,
                   height: 80,
                   decoration: BoxDecoration(
-                    color: theme.isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                    color: theme.isDark ? (MacosTheme.of(context).brightness == Brightness.dark ? MacosTheme.of(context).canvasColor : const Color(0xFF1E1E1E)) : (MacosTheme.of(context).brightness == Brightness.dark ? const Color(0xFF2C2C2C) : Colors.white),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: isSelected ? MacosTheme.of(context).primaryColor : MacosColors.systemGrayColor.withOpacity(0.3),
+                      color: isSelected
+                          ? MacosTheme.of(context).primaryColor
+                          : MacosTheme.of(context).brightness == Brightness.dark
+                              ? Colors.grey.shade700
+                              : MacosColors.systemGrayColor.withOpacity(0.3),
                       width: isSelected ? 2 : 1,
                     ),
                     boxShadow: isSelected
