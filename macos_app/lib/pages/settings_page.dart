@@ -969,13 +969,14 @@ class SettingsPage extends ConsumerWidget {
   }
 
   void _showClearDataConfirmationDialog(BuildContext context, WidgetRef ref) {
+    final theme = MacosTheme.of(context);
     showMacosAlertDialog(
       context: context,
       builder: (_) => MacosAlertDialog(
-        appIcon: const MacosIcon(
+        appIcon: MacosIcon(
           CupertinoIcons.trash,
           size: 56,
-          color: MacosColors.systemRedColor,
+          color: theme.brightness == Brightness.dark ? Colors.red : MacosColors.systemRedColor,
         ),
         title: const Text('Clear All Data'),
         message: const Text(
