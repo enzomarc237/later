@@ -515,7 +515,7 @@ class SettingsPage extends ConsumerWidget {
                                                 appIcon: MacosIcon(
                                                   success ? CupertinoIcons.check_mark_circled : CupertinoIcons.exclamationmark_triangle,
                                                   size: 56,
-                                                  color: success ? MacosColors.systemGreenColor : MacosColors.systemOrangeColor,
+                                                  color: success ? theme.primaryColor : (theme.brightness == Brightness.dark ? Colors.orange : MacosColors.systemOrangeColor),
                                                 ),
                                                 title: Text(success ? 'Restore Successful' : 'Restore Failed'),
                                                 message: Text(
