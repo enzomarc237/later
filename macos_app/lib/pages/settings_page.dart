@@ -18,13 +18,16 @@ class SettingsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final appState = ref.watch(appNotifier);
     final settings = ref.watch(settingsNotifier);
+    final theme = MacosTheme.of(context);
 
     return MacosScaffold(
+      backgroundColor: theme.canvasColor,
       toolBar: ToolBar(
         leading: MacosIconButton(
-          icon: const MacosIcon(
+          icon: MacosIcon(
             CupertinoIcons.arrow_left,
             size: 20,
+            color: theme.brightness == Brightness.dark ? Colors.white : Colors.black,
           ),
           onPressed: () {
             Navigator.of(context).pop();
