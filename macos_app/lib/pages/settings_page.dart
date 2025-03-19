@@ -431,15 +431,16 @@ class SettingsPage extends ConsumerWidget {
 
   void _showBackupHistoryDialog(BuildContext context, WidgetRef ref) async {
     final backups = await ref.read(appNotifier.notifier).listBackups();
+    final theme = MacosTheme.of(context);
 
     if (context.mounted) {
       showMacosAlertDialog(
         context: context,
         builder: (_) => MacosAlertDialog(
-          appIcon: const MacosIcon(
+          appIcon: MacosIcon(
             CupertinoIcons.clock,
             size: 56,
-            color: MacosColors.systemBlueColor,
+            color: theme.primaryColor,
           ),
           title: const Text('Backup History'),
           message: SizedBox(
