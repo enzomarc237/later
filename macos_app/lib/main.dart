@@ -204,26 +204,22 @@ void handleIncomingUrl(String url, ProviderContainer container) {
         // Handle clipboard import
         debugPrint('Triggering clipboard import');
 
-        // Get the window
-        final window = WindowManager.instance.getActiveWindow();
-        if (window != null) {
-          // Bring the app to the foreground
-          window.show();
-          window.focus();
+        // Bring the app to the foreground
+        await windowManager.show();
+        await windowManager.focus();
 
-          // Trigger clipboard import
-          // We need to use a slight delay to ensure the app is fully in the foreground
-          Future.delayed(const Duration(milliseconds: 300), () {
-            // Find the HomePage instance and trigger clipboard import
-            final navigatorState = DialogService.navigatorKey.currentState;
-            if (navigatorState != null) {
-              final context = navigatorState.context;
+        // Trigger clipboard import
+        // We need to use a slight delay to ensure the app is fully in the foreground
+        Future.delayed(const Duration(milliseconds: 300), () {
+          // Find the HomePage instance and trigger clipboard import
+          final navigatorState = DialogService.navigatorKey.currentState;
+          if (navigatorState != null) {
+            final context = navigatorState.context;
 
-              // Force clipboard import regardless of settings
-              _forceClipboardImport(context, container);
-            }
-          });
-        }
+            // Force clipboard import regardless of settings
+            _forceClipboardImport(context, container);
+          }
+        });
       }
     }
   } catch (e) {
