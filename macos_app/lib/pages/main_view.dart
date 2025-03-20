@@ -346,4 +346,65 @@ class _MainViewState extends ConsumerState<MainView> {
       ),
     );
   }
+
+  // Build the validation progress UI for the sidebar
+  Widget _buildValidationProgress(BuildContext context, ValidationProgress progress) {
+    final theme = MacosTheme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: theme.canvasColor,
+        border: Border(
+          top: BorderSide(
+            color: theme.dividerColor,
+          ),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              const MacosIcon(
+                CupertinoIcons.arrow_clockwise,
+                size: 16,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Validating URLs...',
+                  style: theme.typography.caption1,
+                ),
+              ),
+              Text(
+                '${progress.completed}/${progress.total}',
+                style: theme.typography.caption1,
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: progress.percentage / 100,
+              backgroundColor: theme.brightness == Brightness.dark ? MacosColors.systemGrayColor.withOpacity(0.3) : MacosColors.systemGrayColor.withOpacity(0.1),
+              valueColor: AlwaysStoppedAnimation<Color>(theme.primaryColor),
+              minHeight: 4,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            progress.currentUrl,
+            style: theme.typography.caption2.copyWith(
+              color: theme.primaryColor,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
+  }
 }
