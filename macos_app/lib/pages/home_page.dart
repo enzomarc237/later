@@ -14,7 +14,10 @@ import 'package:url_launcher/url_launcher.dart';
 import '../utils/url_validator.dart';
 import '../models/models.dart';
 import '../providers/providers.dart';
+import '../utils/import_export_manager.dart';
+import '../utils/url_validator.dart';
 import 'import_dialog.dart';
+import 'export_dialog.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   final VoidCallback? onSettingsPressed;
@@ -33,6 +36,67 @@ class _HomePageState extends ConsumerState<HomePage> {
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  // Build the validation progress UI
+  Widget _buildValidationProgress(ValidationProgress progress) {
+    final theme = MacosTheme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: theme.canvasColor,
+        border: Border(
+          bottom: BorderSide(
+            color: theme.dividerColor,
+          ),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              const MacosIcon(
+                CupertinoIcons.arrow_clockwise,
+                size: 16,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Validating URLs...',
+                  style: theme.typography.caption1,
+                ),
+              ),
+              Text(
+                '${progress.completed}/${progress.total}',
+                style: theme.typography.caption1,
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: progress.percentage / 100,
+              backgroundColor: theme.brightness == Brightness.dark ? MacosColors.systemGrayColor.withOpacity(0.3) : MacosColors.systemGrayColor.withOpacity(0.1),
+              valueColor: AlwaysStoppedAnimation<Color>(theme.primaryColor),
+              minHeight: 4,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            progress.currentUrl,
+            style: theme.typography.caption2.copyWith(
+              color: theme.primaryColor,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -83,6 +147,7 @@ class _HomePageState extends ConsumerState<HomePage> {
           builder: (context, scrollController) {
             return Column(
               children: [
+                if (appState.validationProgress != null) _buildValidationProgress(appState.validationProgress!),
                 Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Row(
@@ -352,7 +417,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                   width: 12,
                   height: 12,
                   decoration: BoxDecoration(
-                    color: url.status.color,
+                    color: url.status.getColor(context),
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -956,31 +1021,19 @@ class _HomePageState extends ConsumerState<HomePage> {
       // Get export data from AppNotifier
       final exportData = ref.read(appNotifier.notifier).exportData();
 
-      // Convert to JSON
-      final jsonString = jsonEncode(exportData.toJson());
+      // Show export format dialog
+      final exportConfig = await showExportDialog(context);
+      if (exportConfig == null) return;
 
-      // Get save location
-      final saveLocation = await FilePicker.platform.saveFile(
-        dialogTitle: 'Save URLs',
-        fileName: 'later_export_${DateTime.now().millisecondsSinceEpoch}.json',
-        allowedExtensions: ['json'],
-        type: FileType.custom,
-      );
+      // Use ImportExportManager to handle the export
+      final importExportManager = ImportExportManager();
+      await importExportManager.exportBookmarks(context, exportData, exportConfig);
 
-      if (saveLocation != null) {
-        // Write to file
-        final file = File(saveLocation);
-        await file.writeAsString(jsonString);
-
-        // Show success message
-        _showSuccessDialog(context, 'Export Successful', 'URLs exported successfully.');
-
-        // Show notification
-        LocalNotification(
-          title: 'Export Successful',
-          body: 'Exported ${exportData.urls.length} URLs to file',
-        ).show();
-      }
+      // Show notification
+      LocalNotification(
+        title: 'Export Successful',
+        body: 'Exported ${exportData.urls.length} URLs to ${exportConfig.format.displayName} file',
+      ).show();
     } catch (e) {
       debugPrint('Error exporting URLs: $e');
       _showErrorDialog(context, 'Export Failed', 'Failed to export URLs: $e');
@@ -989,57 +1042,34 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   void _importUrls(BuildContext context) async {
     try {
-      // Get file to import
-      final result = await FilePicker.platform.pickFiles(
-        dialogTitle: 'Import URLs',
-        allowedExtensions: ['json'],
-        type: FileType.custom,
+      // Use ImportExportManager to handle the import
+      final importExportManager = ImportExportManager();
+      final importedUrls = await importExportManager.importBookmarks(context);
+
+      if (importedUrls == null || importedUrls.isEmpty) return;
+
+      // Show import dialog to let user select URLs and category
+      final selectedUrls = await showImportUrlsDialog(
+        context,
+        importedUrls,
       );
 
-      if (result != null && result.files.single.path != null) {
-        // Read file
-        final file = File(result.files.single.path!);
-        final jsonString = await file.readAsString();
+      // If user canceled, do nothing
+      if (selectedUrls == null || selectedUrls.isEmpty) return;
 
-        // Parse JSON
-        final jsonData = jsonDecode(jsonString) as Map<String, dynamic>;
-        final importData = ExportData.fromJson(jsonData);
+      // Import selected URLs
+      final appNotifierRef = ref.read(appNotifier.notifier);
 
-        // Get default category name if available
-        String initialCategoryName = '';
-        if (importData.categories.isNotEmpty) {
-          initialCategoryName = importData.categories.first.name;
-        }
-
-        // Show import dialog to let user select URLs and category
-        final selectedUrls = await showImportUrlsDialog(
-          context,
-          importData.urls,
-          initialCategoryName: initialCategoryName,
-        );
-
-        // If user canceled, do nothing
-        if (selectedUrls == null || selectedUrls.isEmpty) {
-          return;
-        }
-
-        // Import selected URLs
-        final appNotifierRef = ref.read(appNotifier.notifier);
-
-        // Add each URL
-        for (final url in selectedUrls) {
-          appNotifierRef.addUrl(url);
-        }
-
-        // Show success message
-        _showSuccessDialog(context, 'Import Successful', 'Imported ${selectedUrls.length} URLs.');
-
-        // Show notification
-        LocalNotification(
-          title: 'Import Successful',
-          body: 'Imported ${selectedUrls.length} URLs',
-        ).show();
+      // Add each URL
+      for (final url in selectedUrls) {
+        appNotifierRef.addUrl(url);
       }
+
+      // Show notification
+      LocalNotification(
+        title: 'Import Successful',
+        body: 'Imported ${selectedUrls.length} URLs',
+      ).show();
     } catch (e) {
       debugPrint('Error importing URLs: $e');
       _showErrorDialog(context, 'Import Failed', 'Failed to import URLs: $e');
@@ -1101,6 +1131,67 @@ class _HomePageState extends ConsumerState<HomePage> {
     return formatter.format(dateTime);
   }
 
+  // Build the validation progress UI
+  Widget _buildValidationProgress(ValidationProgress progress) {
+    final theme = MacosTheme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: theme.canvasColor,
+        border: Border(
+          top: BorderSide(
+            color: theme.dividerColor,
+          ),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              const MacosIcon(
+                CupertinoIcons.arrow_clockwise,
+                size: 16,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Validating URLs...',
+                  style: theme.typography.caption1,
+                ),
+              ),
+              Text(
+                '${progress.completed}/${progress.total}',
+                style: theme.typography.caption1,
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: progress.percentage / 100,
+              backgroundColor: theme.brightness == Brightness.dark ? MacosColors.systemGrayColor.withOpacity(0.3) : MacosColors.systemGrayColor.withOpacity(0.1),
+              valueColor: AlwaysStoppedAnimation<Color>(theme.primaryColor),
+              minHeight: 4,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            progress.currentUrl,
+            style: theme.typography.caption2.copyWith(
+              color: theme.primaryColor,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
+  }
+
   // Build a favicon image widget
   Widget _buildFaviconImage(String? faviconUrl) {
     final theme = MacosTheme.of(context);
@@ -1143,107 +1234,20 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   // Validate all visible URLs
-  Future<void> _validateVisibleUrls(BuildContext context) async {
+  void _validateVisibleUrls(BuildContext context) {
     final appState = ref.read(appNotifier);
     final visibleUrls = appState.visibleUrls;
-    final theme = MacosTheme.of(context);
 
     if (visibleUrls.isEmpty) return;
 
-    // Show loading dialog
-    bool isCancelled = false;
-    showMacosAlertDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => MacosAlertDialog(
-        appIcon: MacosIcon(
-          CupertinoIcons.checkmark_shield,
-          size: 56,
-          color: theme.primaryColor,
-        ),
-        title: const Text('Validating URLs'),
-        message: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 16),
-            const ProgressCircle(),
-            const SizedBox(height: 16),
-            Text(
-              'Checking ${visibleUrls.length} URLs...',
-              style: theme.typography.body,
-            ),
-          ],
-        ),
-        primaryButton: PushButton(
-          controlSize: ControlSize.large,
-          onPressed: () {
-            isCancelled = true;
-            Navigator.of(context).pop();
-          },
-          child: const Text('Cancel'),
-        ),
-      ),
-    );
+    // Start validation in background
+    ref.read(appNotifier.notifier).validateVisibleUrls();
 
-    // Validate all visible URLs
-    if (!isCancelled) {
-      final results = await ref.read(appNotifier.notifier).validateVisibleUrls();
-
-      // Close the loading dialog
-      if (context.mounted) {
-        Navigator.of(context).pop();
-      }
-
-      // Show results
-      if (context.mounted && !isCancelled) {
-        int validCount = 0;
-        int invalidCount = 0;
-        int errorCount = 0;
-
-        results.forEach((_, status) {
-          if (status.isValid) {
-            validCount++;
-          } else if (status.isInvalid) {
-            invalidCount++;
-          } else {
-            errorCount++;
-          }
-        });
-
-        showMacosAlertDialog(
-          context: context,
-          builder: (_) => MacosAlertDialog(
-            appIcon: MacosIcon(
-              CupertinoIcons.checkmark_shield,
-              size: 56,
-              color: theme.primaryColor,
-            ),
-            title: const Text('Validation Results'),
-            message: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Validated ${results.length} URLs:',
-                  style: theme.typography.body,
-                ),
-                const SizedBox(height: 8),
-                Text('• $validCount valid URLs', style: TextStyle(color: MacosColors.systemGreenColor)),
-                Text('• $invalidCount invalid URLs', style: TextStyle(color: MacosColors.systemRedColor)),
-                if (errorCount > 0) Text('• $errorCount URLs with errors', style: TextStyle(color: MacosColors.systemOrangeColor)),
-              ],
-            ),
-            primaryButton: PushButton(
-              controlSize: ControlSize.large,
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('OK'),
-            ),
-          ),
-        );
-      }
-    }
+    // Show a notification that validation has started
+    LocalNotification(
+      title: 'URL Validation Started',
+      body: 'Validating ${visibleUrls.length} URLs in the background',
+    ).show();
   }
 
   // Fetch metadata for a URL and update dialog fields
