@@ -163,8 +163,8 @@ class _MainViewState extends ConsumerState<MainView> {
                                     padding: const EdgeInsets.only(right: 8.0),
                                     onPressed: () {
                                       _showCategoryContextMenu(
-                                        context, 
-                                        category, 
+                                        context,
+                                        category,
                                         Offset(
                                           MediaQuery.of(context).size.width / 2,
                                           MediaQuery.of(context).size.height / 2,
@@ -172,7 +172,8 @@ class _MainViewState extends ConsumerState<MainView> {
                                       );
                                     },
                                   ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
                         );
