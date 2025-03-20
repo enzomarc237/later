@@ -379,7 +379,7 @@ class _MainViewState extends ConsumerState<MainView> {
           child: Row(
             children: [
               MacosIcon(
-                CupertinoIcons.link_badge_plus,
+                CupertinoIcons.link,
                 color: theme.brightness == Brightness.dark ? Colors.white : Colors.black,
                 size: 18,
               ),
