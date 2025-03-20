@@ -218,7 +218,7 @@ class UrlValidator {
               if (htmlResponse.statusCode == 200) {
                 // Use a simple regex to find favicon links
                 final html = htmlResponse.body;
-                final regExp = RegExp(r'<link[^>]*rel=["\'](icon|shortcut icon)["\'][^>]*href=["\'](.*?)["\'][^>]*>', caseSensitive: false);
+                final regExp = RegExp(r'<link[^>]*rel=["\'](?:icon|shortcut icon)["\'][^>]*href=["\']([^"\']+)["\'][^>]*>', caseSensitive: false);
                 final match = regExp.firstMatch(html);
                 
                 if (match != null && match.groupCount >= 2) {
