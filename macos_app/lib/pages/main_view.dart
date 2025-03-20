@@ -131,36 +131,47 @@ class _MainViewState extends ConsumerState<MainView> {
                               color: isSelected ? theme.primaryColor.withOpacity(0.2) : Colors.transparent,
                               borderRadius: BorderRadius.circular(8.0),
                             ),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: MacosListTile(
-                                    leading: MacosIcon(
-                                      CupertinoIcons.folder,
+                            child: GestureDetector(
+                              onSecondaryTapUp: (details) {
+                                _showCategoryContextMenu(context, category, details.globalPosition);
+                              },
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: MacosListTile(
+                                      leading: MacosIcon(
+                                        category.icon,
+                                        color: theme.brightness == Brightness.dark ? Colors.white : Colors.black,
+                                      ),
+                                      title: Text(
+                                        category.name,
+                                        style: theme.typography.body,
+                                      ),
+                                      onClick: () {
+                                        ref.read(appNotifier.notifier).selectCategory(category.id);
+                                        // Switch to HomePage when a category is selected
+                                        setState(() => _pageIndex = 0);
+                                      },
+                                    ),
+                                  ),
+                                  MacosIconButton(
+                                    icon: MacosIcon(
+                                      CupertinoIcons.ellipsis,
+                                      size: 16,
                                       color: theme.brightness == Brightness.dark ? Colors.white : Colors.black,
                                     ),
-                                    title: Text(
-                                      category.name,
-                                      style: theme.typography.body,
-                                    ),
-                                    onClick: () {
-                                      ref.read(appNotifier.notifier).selectCategory(category.id);
-                                      // Switch to HomePage when a category is selected
-                                      setState(() => _pageIndex = 0);
+                                    padding: const EdgeInsets.only(right: 8.0),
+                                    onPressed: () {
+                                      _showCategoryContextMenu(
+                                        context, 
+                                        category, 
+                                        Offset(
+                                          MediaQuery.of(context).size.width / 2,
+                                          MediaQuery.of(context).size.height / 2,
+                                        ),
+                                      );
                                     },
                                   ),
-                                ),
-                                MacosIconButton(
-                                  icon: MacosIcon(
-                                    CupertinoIcons.pencil,
-                                    size: 16,
-                                    color: theme.brightness == Brightness.dark ? Colors.white : Colors.black,
-                                  ),
-                                  padding: const EdgeInsets.only(right: 8.0),
-                                  onPressed: () {
-                                    _showEditCategoryDialog(context, category);
-                                  },
-                                ),
                               ],
                             ),
                           ),
