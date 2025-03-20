@@ -220,19 +220,27 @@ class _MainViewState extends ConsumerState<MainView> {
             ),
           ],
         ),
-        bottom: MacosListTile(
-          leading: MacosIcon(
-            CupertinoIcons.app_badge,
-            color: theme.brightness == Brightness.dark ? Colors.white : Colors.black,
-          ),
-          title: Text(
-            'Later',
-            style: theme.typography.body,
-          ),
-          subtitle: Text(
-            'Version ${appState.appVersion}',
-            style: theme.typography.caption2,
-          ),
+        bottom: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Show validation progress if available
+            if (appState.validationProgress != null) _buildValidationProgress(context, appState.validationProgress!),
+
+            MacosListTile(
+              leading: MacosIcon(
+                CupertinoIcons.app_badge,
+                color: theme.brightness == Brightness.dark ? Colors.white : Colors.black,
+              ),
+              title: Text(
+                'Later',
+                style: theme.typography.body,
+              ),
+              subtitle: Text(
+                'Version ${appState.appVersion}',
+                style: theme.typography.caption2,
+              ),
+            ),
+          ],
         ),
       ),
       child: IndexedStack(
