@@ -485,7 +485,7 @@ class _MainViewState extends ConsumerState<MainView> {
       context: context,
       builder: (_) => MacosAlertDialog(
         appIcon: MacosIcon(
-          CupertinoIcons.link_badge_plus,
+          CupertinoIcons.add_circled,
           size: 56,
           color: theme.primaryColor,
         ),
