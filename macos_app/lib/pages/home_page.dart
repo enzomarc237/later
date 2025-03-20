@@ -18,6 +18,20 @@ import '../utils/import_export_manager.dart';
 import 'import_dialog.dart';
 import 'export_dialog.dart';
 
+// App lifecycle observer to monitor app state changes
+class _AppLifecycleObserver extends WidgetsBindingObserver {
+  final VoidCallback onResumed;
+
+  _AppLifecycleObserver({required this.onResumed});
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      onResumed();
+    }
+  }
+}
+
 class HomePage extends ConsumerStatefulWidget {
   final VoidCallback? onSettingsPressed;
 
@@ -30,61 +44,26 @@ class HomePage extends ConsumerStatefulWidget {
 class _HomePageState extends ConsumerState<HomePage> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
-
-  // App lifecycle observer to monitor app state changes
-  class _AppLifecycleObserver extends WidgetsBindingObserver {
-    final VoidCallback onResumed;
-
-    _AppLifecycleObserver({required this.onResumed});
-
-    @override
-    void didChangeAppLifecycleState(AppLifecycleState state) {
-      if (state == AppLifecycleState.resumed) {
-        onResumed();
-      }
-    }
-  }
+  late _AppLifecycleObserver _lifecycleObserver;
 
   @override
   void initState() {
     super.initState();
     // Check clipboard for URLs when the app starts
     _checkClipboardForUrls();
-    
-    // Add listener to check clipboard when app is resumed
-    WidgetsBinding.instance.addObserver(_AppLifecycleObserver(
+
+    // Create and add observer to check clipboard when app is resumed
+    _lifecycleObserver = _AppLifecycleObserver(
       onResumed: _checkClipboardForUrls,
-    ));
+    );
+    WidgetsBinding.instance.addObserver(_lifecycleObserver);
   }
 
   @override
   void dispose() {
     // Remove the observer when the widget is disposed
-    WidgetsBinding.instance.removeObserver(_AppLifecycleObserver(
-      onResumed: _checkClipboardForUrls,
-    ));
+    WidgetsBinding.instance.removeObserver(_lifecycleObserver);
     _searchController.dispose();
-    super.dispose();
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    // Check clipboard for URLs when the app starts
-    _checkClipboardForUrls();
-
-    // Add listener to check clipboard when app is resumed
-    WidgetsBinding.instance.addObserver(_AppLifecycleObserver(
-      onResumed: _checkClipboardForUrls,
-    ));
-  }
-
-  @override
-  void dispose() {
-    // Remove the observer when the widget is disposed
-    WidgetsBinding.instance.removeObserver(_AppLifecycleObserver(
-      onResumed: _checkClipboardForUrls,
-    ));
     super.dispose();
   }
 
