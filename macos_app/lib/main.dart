@@ -120,7 +120,7 @@ Future<void> main() async {
   );
 }
 
-void handleIncomingUrl(String url, ProviderContainer container) {
+Future<void> handleIncomingUrl(String url, ProviderContainer container) async {
   debugPrint('Handling URL: $url');
 
   try {
