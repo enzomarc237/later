@@ -359,6 +359,341 @@ class _MainViewState extends ConsumerState<MainView> {
     );
   }
 
+  // Show context menu for a category
+  void _showCategoryContextMenu(BuildContext context, Category category, Offset position) {
+    final theme = MacosTheme.of(context);
+    final appNotifierRef = ref.read(appNotifier.notifier);
+
+    showMenu(
+      context: context,
+      position: RelativeRect.fromLTRB(
+        position.dx,
+        position.dy,
+        position.dx + 1,
+        position.dy + 1,
+      ),
+      items: [
+        PopupMenuItem(
+          child: Row(
+            children: [
+              MacosIcon(
+                CupertinoIcons.link_badge_plus,
+                color: theme.brightness == Brightness.dark ? Colors.white : Colors.black,
+                size: 18,
+              ),
+              const SizedBox(width: 8),
+              const Text('Add URL to category'),
+            ],
+          ),
+          onTap: () {
+            // Use Future.delayed to avoid "Looking up a deactivated widget's ancestor" error
+            Future.delayed(Duration.zero, () {
+              _showAddUrlToCategoryDialog(context, category);
+            });
+          },
+        ),
+        PopupMenuItem(
+          child: Row(
+            children: [
+              MacosIcon(
+                CupertinoIcons.pencil,
+                color: theme.brightness == Brightness.dark ? Colors.white : Colors.black,
+                size: 18,
+              ),
+              const SizedBox(width: 8),
+              const Text('Edit category'),
+            ],
+          ),
+          onTap: () {
+            Future.delayed(Duration.zero, () {
+              _showEditCategoryDialog(context, category);
+            });
+          },
+        ),
+        PopupMenuItem(
+          child: Row(
+            children: [
+              MacosIcon(
+                CupertinoIcons.photo,
+                color: theme.brightness == Brightness.dark ? Colors.white : Colors.black,
+                size: 18,
+              ),
+              const SizedBox(width: 8),
+              const Text('Change icon'),
+            ],
+          ),
+          onTap: () {
+            Future.delayed(Duration.zero, () {
+              _showChangeCategoryIconDialog(context, category);
+            });
+          },
+        ),
+        PopupMenuItem(
+          child: Row(
+            children: [
+              MacosIcon(
+                CupertinoIcons.arrow_up_doc,
+                color: theme.brightness == Brightness.dark ? Colors.white : Colors.black,
+                size: 18,
+              ),
+              const SizedBox(width: 8),
+              const Text('Export category'),
+            ],
+          ),
+          onTap: () {
+            Future.delayed(Duration.zero, () {
+              _exportCategory(context, category);
+            });
+          },
+        ),
+        PopupMenuItem(
+          child: Row(
+            children: [
+              MacosIcon(
+                CupertinoIcons.trash,
+                color: MacosColors.systemRedColor,
+                size: 18,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Delete category',
+                style: TextStyle(
+                  color: MacosColors.systemRedColor,
+                ),
+              ),
+            ],
+          ),
+          onTap: () {
+            Future.delayed(Duration.zero, () {
+              _showDeleteCategoryConfirmation(context, category);
+            });
+          },
+        ),
+      ],
+    );
+  }
+
+  // Show dialog to add a URL to a category
+  void _showAddUrlToCategoryDialog(BuildContext context, Category category) {
+    final TextEditingController controller = TextEditingController();
+    final TextEditingController titleController = TextEditingController();
+    final theme = MacosTheme.of(context);
+
+    showMacosAlertDialog(
+      context: context,
+      builder: (_) => MacosAlertDialog(
+        appIcon: MacosIcon(
+          CupertinoIcons.link_badge_plus,
+          size: 56,
+          color: theme.primaryColor,
+        ),
+        title: Text('Add URL to ${category.name}'),
+        message: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              MacosTextField(
+                placeholder: 'URL (e.g., https://example.com)',
+                controller: controller,
+              ),
+              const SizedBox(height: 12),
+              MacosTextField(
+                placeholder: 'Title (optional)',
+                controller: titleController,
+              ),
+            ],
+          ),
+        ),
+        primaryButton: PushButton(
+          controlSize: ControlSize.large,
+          onPressed: () {
+            final url = controller.text.trim();
+            if (url.isNotEmpty) {
+              // Create a new URL item
+              final newUrl = UrlItem(
+                url: url,
+                title: titleController.text.trim().isNotEmpty ? titleController.text.trim() : url,
+                categoryId: category.id,
+              );
+
+              // Add the URL to the app
+              ref.read(appNotifier.notifier).addUrl(newUrl, fetchMetadata: true);
+              Navigator.of(context).pop();
+            }
+          },
+          child: const Text('Add'),
+        ),
+        secondaryButton: PushButton(
+          controlSize: ControlSize.large,
+          secondary: true,
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          child: const Text('Cancel'),
+        ),
+      ),
+    );
+  }
+
+  // Show dialog to change a category's icon
+  void _showChangeCategoryIconDialog(BuildContext context, Category category) {
+    final theme = MacosTheme.of(context);
+    final appNotifierRef = ref.read(appNotifier.notifier);
+
+    // List of available icons
+    final iconOptions = [
+      {'name': 'folder', 'icon': CupertinoIcons.folder},
+      {'name': 'bookmark', 'icon': CupertinoIcons.bookmark},
+      {'name': 'link', 'icon': CupertinoIcons.link},
+      {'name': 'doc', 'icon': CupertinoIcons.doc},
+      {'name': 'book', 'icon': CupertinoIcons.book},
+      {'name': 'tag', 'icon': CupertinoIcons.tag},
+      {'name': 'star', 'icon': CupertinoIcons.star},
+      {'name': 'heart', 'icon': CupertinoIcons.heart},
+      {'name': 'globe', 'icon': CupertinoIcons.globe},
+      {'name': 'person', 'icon': CupertinoIcons.person},
+      {'name': 'cart', 'icon': CupertinoIcons.cart},
+      {'name': 'gift', 'icon': CupertinoIcons.gift},
+      {'name': 'calendar', 'icon': CupertinoIcons.calendar},
+      {'name': 'clock', 'icon': CupertinoIcons.clock},
+      {'name': 'music_note', 'icon': CupertinoIcons.music_note},
+      {'name': 'photo', 'icon': CupertinoIcons.photo},
+      {'name': 'video', 'icon': CupertinoIcons.video_camera},
+      {'name': 'game', 'icon': CupertinoIcons.game_controller},
+      {'name': 'mail', 'icon': CupertinoIcons.mail},
+      {'name': 'chat', 'icon': CupertinoIcons.chat_bubble},
+    ];
+
+    showMacosAlertDialog(
+      context: context,
+      builder: (_) => MacosAlertDialog(
+        appIcon: MacosIcon(
+          CupertinoIcons.photo,
+          size: 56,
+          color: theme.primaryColor,
+        ),
+        title: Text('Change Icon for ${category.name}'),
+        message: SizedBox(
+          width: 400,
+          height: 300,
+          child: GridView.builder(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 5,
+              childAspectRatio: 1,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+            ),
+            itemCount: iconOptions.length,
+            itemBuilder: (context, index) {
+              final iconOption = iconOptions[index];
+              final isSelected = category.iconName == iconOption['name'];
+
+              return GestureDetector(
+                onTap: () {
+                  // Update the category with the new icon
+                  final updatedCategory = category.copyWith(iconName: iconOption['name'] as String);
+                  appNotifierRef.updateCategory(updatedCategory);
+                  Navigator.of(context).pop();
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: isSelected ? theme.primaryColor.withOpacity(0.2) : Colors.transparent,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: isSelected ? theme.primaryColor : Colors.transparent,
+                      width: 2,
+                    ),
+                  ),
+                  child: Center(
+                    child: MacosIcon(
+                      iconOption['icon'] as IconData,
+                      size: 24,
+                      color: theme.brightness == Brightness.dark ? Colors.white : Colors.black,
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        primaryButton: PushButton(
+          controlSize: ControlSize.large,
+          secondary: true,
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          child: const Text('Cancel'),
+        ),
+      ),
+    );
+  }
+
+  // Export only a specific category
+  void _exportCategory(BuildContext context, Category category) async {
+    final appState = ref.read(appNotifier);
+
+    // Get URLs for this category
+    final categoryUrls = appState.urls.where((url) => url.categoryId == category.id).toList();
+
+    // Create export data with only this category
+    final exportData = ExportData(
+      categories: [category],
+      urls: categoryUrls,
+      version: appState.appVersion,
+    );
+
+    // Show export dialog
+    final exportConfig = await showExportDialog(context);
+    if (exportConfig != null) {
+      // Import the import_export_manager
+      final importExportManager = ImportExportManager();
+
+      // Export the category
+      await importExportManager.exportBookmarks(context, exportData, exportConfig);
+    }
+  }
+
+  // Show confirmation dialog for deleting a category
+  void _showDeleteCategoryConfirmation(BuildContext context, Category category) {
+    final theme = MacosTheme.of(context);
+    final appNotifierRef = ref.read(appNotifier.notifier);
+
+    showMacosAlertDialog(
+      context: context,
+      builder: (_) => MacosAlertDialog(
+        appIcon: MacosIcon(
+          CupertinoIcons.exclamationmark_triangle,
+          size: 56,
+          color: MacosColors.systemRedColor,
+        ),
+        title: Text('Delete ${category.name}?'),
+        message: Text(
+          'This will permanently delete the category and all URLs in it. This action cannot be undone.',
+          style: theme.typography.body,
+        ),
+        primaryButton: PushButton(
+          controlSize: ControlSize.large,
+          onPressed: () {
+            // Delete the category
+            appNotifierRef.deleteCategory(category.id);
+            Navigator.of(context).pop();
+          },
+          color: MacosColors.systemRedColor,
+          child: const Text('Delete'),
+        ),
+        secondaryButton: PushButton(
+          controlSize: ControlSize.large,
+          secondary: true,
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          child: const Text('Cancel'),
+        ),
+      ),
+    );
+  }
+
   // Build the validation progress UI for the sidebar
   Widget _buildValidationProgress(BuildContext context, ValidationProgress progress) {
     final theme = MacosTheme.of(context);
