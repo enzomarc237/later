@@ -31,71 +31,40 @@ class _HomePageState extends ConsumerState<HomePage> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
+  // App lifecycle observer to monitor app state changes
+  class _AppLifecycleObserver extends WidgetsBindingObserver {
+    final VoidCallback onResumed;
+
+    _AppLifecycleObserver({required this.onResumed});
+
+    @override
+    void didChangeAppLifecycleState(AppLifecycleState state) {
+      if (state == AppLifecycleState.resumed) {
+        onResumed();
+      }
+    }
   }
 
-  // Build the validation progress UI
-  Widget _buildValidationProgress(ValidationProgress progress) {
-    final theme = MacosTheme.of(context);
+  @override
+  void initState() {
+    super.initState();
+    // Check clipboard for URLs when the app starts
+    _checkClipboardForUrls();
+    
+    // Add listener to check clipboard when app is resumed
+    WidgetsBinding.instance.addObserver(_AppLifecycleObserver(
+      onResumed: _checkClipboardForUrls,
+    ));
+  }
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: theme.canvasColor,
-        border: Border(
-          bottom: BorderSide(
-            color: theme.dividerColor,
-          ),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            children: [
-              const MacosIcon(
-                CupertinoIcons.arrow_clockwise,
-                size: 16,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Validating URLs...',
-                  style: theme.typography.caption1,
-                ),
-              ),
-              Text(
-                '${progress.completed}/${progress.total}',
-                style: theme.typography.caption1,
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: progress.percentage / 100,
-              backgroundColor: theme.brightness == Brightness.dark ? MacosColors.systemGrayColor.withOpacity(0.3) : MacosColors.systemGrayColor.withOpacity(0.1),
-              valueColor: AlwaysStoppedAnimation<Color>(theme.primaryColor),
-              minHeight: 4,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            progress.currentUrl,
-            style: theme.typography.caption2.copyWith(
-              color: theme.primaryColor,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ),
-    );
+  @override
+  void dispose() {
+    // Remove the observer when the widget is disposed
+    WidgetsBinding.instance.removeObserver(_AppLifecycleObserver(
+      onResumed: _checkClipboardForUrls,
+    ));
+    _searchController.dispose();
+    super.dispose();
   }
 
   @override
