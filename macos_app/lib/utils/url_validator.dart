@@ -3,6 +3,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
+/// Callback for validation progress updates
+typedef ValidationProgressCallback = void Function(int completed, int total, String currentUrl);
+
+/// Callback for metadata updates
+typedef MetadataUpdateCallback = void Function(String url, Map<String, dynamic> metadata);
+
 /// Enum representing the status of a URL validation check
 enum UrlStatus {
   /// The URL hasn't been validated yet
@@ -49,7 +55,6 @@ extension UrlStatusExtension on UrlStatus {
   bool get isUnknown => this == UrlStatus.unknown;
 
   /// Returns the appropriate color for this status based on the theme
-  /// This can be used to visually indicate the status in the UI
   Color getColor(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -68,7 +73,6 @@ extension UrlStatusExtension on UrlStatus {
   }
 
   /// Legacy color getter for backward compatibility
-  /// Consider using getColor(context) instead for theme-aware colors
   Color get color {
     switch (this) {
       case UrlStatus.unknown:
@@ -172,12 +176,79 @@ class UrlValidator {
     }
   }
 
-  /// Validates multiple URLs and returns a map of URL to status
-  Future<Map<String, UrlStatus>> validateUrls(List<String> urls) async {
+  /// Validates multiple URLs in parallel with progress updates
+  Future<Map<String, UrlStatus>> validateUrls(
+    List<String> urls, {
+    ValidationProgressCallback? onProgress,
+    MetadataUpdateCallback? onMetadataUpdated,
+    int batchSize = 5, // Number of concurrent validations
+  }) async {
     final results = <String, UrlStatus>{};
+    int completed = 0;
 
-    for (final url in urls) {
-      results[url] = await validateUrl(url);
+    // Process URLs in batches
+    for (var i = 0; i < urls.length; i += batchSize) {
+      final batch = urls.skip(i).take(batchSize);
+      final futures = batch.map((url) async {
+        final status = await validateUrl(url);
+        
+        // Try to fetch favicon for all URLs, not just valid ones
+        try {
+          final uri = Uri.parse(url);
+          
+          // First try to fetch favicon from standard location
+          final faviconUrl = '${uri.scheme}://${uri.host}/favicon.ico';
+          try {
+            final response = await _client.head(Uri.parse(faviconUrl)).timeout(
+                  const Duration(seconds: 5),
+                );
+            
+            if (response.statusCode == 200) {
+              onMetadataUpdated?.call(url, {'faviconUrl': faviconUrl});
+            }
+          } catch (e) {
+            debugPrint('Error fetching standard favicon for $url: $e');
+            
+            // If standard favicon fails, try to fetch HTML and extract favicon URL
+            try {
+              final htmlResponse = await _client.get(uri).timeout(
+                    const Duration(seconds: 10),
+                  );
+              
+              if (htmlResponse.statusCode == 200) {
+                // Use a simple regex to find favicon links
+                final html = htmlResponse.body;
+                final regExp = RegExp(r'<link[^>]*rel=["\'](icon|shortcut icon)["\'][^>]*href=["\'](.*?)["\'][^>]*>', caseSensitive: false);
+                final match = regExp.firstMatch(html);
+                
+                if (match != null && match.groupCount >= 2) {
+                  var iconHref = match.group(2)!;
+                  
+                  // Handle relative URLs
+                  if (iconHref.startsWith('/')) {
+                    iconHref = '${uri.scheme}://${uri.host}$iconHref';
+                  } else if (!iconHref.startsWith('http')) {
+                    iconHref = '${uri.scheme}://${uri.host}/$iconHref';
+                  }
+                  
+                  onMetadataUpdated?.call(url, {'faviconUrl': iconHref});
+                }
+              }
+            } catch (e) {
+              debugPrint('Error extracting favicon from HTML for $url: $e');
+            }
+          }
+        } catch (e) {
+          debugPrint('Error processing favicon for $url: $e');
+        }
+
+        completed++;
+        onProgress?.call(completed, urls.length, url);
+        return MapEntry(url, status);
+      });
+
+      final batchResults = await Future.wait(futures);
+      results.addEntries(batchResults);
     }
 
     return results;
