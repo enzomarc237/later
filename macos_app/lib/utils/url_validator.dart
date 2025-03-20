@@ -191,47 +191,63 @@ class UrlValidator {
       final batch = urls.skip(i).take(batchSize);
       final futures = batch.map((url) async {
         final status = await validateUrl(url);
-        
+
         // Try to fetch favicon for all URLs, not just valid ones
         try {
           final uri = Uri.parse(url);
-          
+
           // First try to fetch favicon from standard location
           final faviconUrl = '${uri.scheme}://${uri.host}/favicon.ico';
           try {
             final response = await _client.head(Uri.parse(faviconUrl)).timeout(
                   const Duration(seconds: 5),
                 );
-            
+
             if (response.statusCode == 200) {
               onMetadataUpdated?.call(url, {'faviconUrl': faviconUrl});
             }
           } catch (e) {
             debugPrint('Error fetching standard favicon for $url: $e');
-            
-            // If standard favicon fails, try to fetch HTML and extract favicon URL
+
+            // If standard favicon fails, try to fetch HTML and look for link tags
             try {
               final htmlResponse = await _client.get(uri).timeout(
                     const Duration(seconds: 10),
                   );
-              
+
               if (htmlResponse.statusCode == 200) {
-                // Use a simple regex to find favicon links
-                final html = htmlResponse.body;
-                final regExp = RegExp(r'<link[^>]*rel=["\'](icon|shortcut icon)["\'][^>]*href=["\'](.*?)["\']', caseSensitive: false);
-                final match = regExp.firstMatch(html);
-                
-                if (match != null && match.groupCount >= 2) {
-                  var iconHref = match.group(2)!;
-                  
-                  // Handle relative URLs
-                  if (iconHref.startsWith('/')) {
-                    iconHref = '${uri.scheme}://${uri.host}$iconHref';
-                  } else if (!iconHref.startsWith('http')) {
-                    iconHref = '${uri.scheme}://${uri.host}/$iconHref';
+                final html = htmlResponse.body.toLowerCase();
+
+                // Look for common favicon patterns in the HTML
+                final patterns = ['rel="icon"', 'rel="shortcut icon"', 'rel=\'icon\'', 'rel=\'shortcut icon\''];
+
+                for (final pattern in patterns) {
+                  final index = html.indexOf(pattern);
+                  if (index != -1) {
+                    // Find the href attribute
+                    final hrefIndex = html.indexOf('href=', index);
+                    if (hrefIndex != -1 && hrefIndex < index + 100) {
+                      // Look within reasonable distance
+                      final quoteChar = html[hrefIndex + 5]; // " or '
+                      if (quoteChar == '"' || quoteChar == "'") {
+                        final startIndex = hrefIndex + 6;
+                        final endIndex = html.indexOf(quoteChar, startIndex);
+                        if (endIndex != -1) {
+                          var iconHref = html.substring(startIndex, endIndex);
+
+                          // Handle relative URLs
+                          if (iconHref.startsWith('/')) {
+                            iconHref = '${uri.scheme}://${uri.host}$iconHref';
+                          } else if (!iconHref.startsWith('http')) {
+                            iconHref = '${uri.scheme}://${uri.host}/$iconHref';
+                          }
+
+                          onMetadataUpdated?.call(url, {'faviconUrl': iconHref});
+                          break;
+                        }
+                      }
+                    }
                   }
-                  
-                  onMetadataUpdated?.call(url, {'faviconUrl': iconHref});
                 }
               }
             } catch (e) {
