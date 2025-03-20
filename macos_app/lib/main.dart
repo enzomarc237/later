@@ -21,8 +21,19 @@ import 'utils/intent.dart';
 import 'utils/keyboard_shortcuts.dart';
 import 'utils/system_tray_manager.dart';
 
+/// This method initializes macos_window_utils and styles
+///  window.
+Future<void> _configureMacosWindowUtils() async {
+  const config = MacosWindowUtilsConfig(
+    toolbarStyle: NSWindowToolbarStyle.unified,
+  );
+  await config.apply();
+}
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await _configureMacosWindowUtils();
 
   // Initialize local notifier
   final localNotifier = LocalNotifier.instance;
@@ -189,10 +200,103 @@ void handleIncomingUrl(String url, ProviderContainer container) {
             debugPrint('Error parsing import data: $e');
           }
         }
+      } else if (uri.path == '/clipboard-import') {
+        // Handle clipboard import
+        debugPrint('Triggering clipboard import');
+
+        // Get the window
+        final window = WindowManager.instance.getActiveWindow();
+        if (window != null) {
+          // Bring the app to the foreground
+          window.show();
+          window.focus();
+
+          // Trigger clipboard import
+          // We need to use a slight delay to ensure the app is fully in the foreground
+          Future.delayed(const Duration(milliseconds: 300), () {
+            // Find the HomePage instance and trigger clipboard import
+            final navigatorState = DialogService.navigatorKey.currentState;
+            if (navigatorState != null) {
+              final context = navigatorState.context;
+
+              // Force clipboard import regardless of settings
+              _forceClipboardImport(context, container);
+            }
+          });
+        }
       }
     }
   } catch (e) {
     debugPrint('Error handling URL: $e');
+  }
+}
+
+// Force clipboard import regardless of settings
+void _forceClipboardImport(BuildContext context, ProviderContainer container) async {
+  try {
+    // Get clipboard data
+    final clipboardData = await Clipboard.getData(Clipboard.kTextPlain);
+    if (clipboardData == null || clipboardData.text == null) return;
+
+    final text = clipboardData.text!.trim();
+    if (text.isEmpty) return;
+
+    // Check if it's a JSON object (exported data)
+    if (text.startsWith('{') && text.endsWith('}')) {
+      try {
+        final decodedData = jsonDecode(text) as Map<String, dynamic>;
+
+        // Check if it has the expected structure
+        if (decodedData.containsKey('urls') && decodedData.containsKey('version')) {
+          final importData = ExportData.fromJson(decodedData);
+          container.read(appNotifier.notifier).importData(importData);
+
+          // Show notification
+          LocalNotification(
+            title: 'URLs Imported',
+            body: 'Imported ${importData.urls.length} URLs from clipboard',
+          ).show();
+
+          return;
+        }
+      } catch (e) {
+        debugPrint('Error parsing clipboard JSON: $e');
+        // Not valid JSON, continue to URL check
+      }
+    }
+
+    // Check if the text is a valid URL
+    if (!text.startsWith('http://') && !text.startsWith('https://')) {
+      // Try to prepend https:// and check if it's valid
+      if (!Uri.tryParse('https://$text')!.hasAuthority) return;
+    } else if (!Uri.tryParse(text)!.hasAuthority) {
+      return;
+    }
+
+    // Check if URL already exists
+    final appState = container.read(appNotifier);
+    if (appState.urls.any((url) => url.url == text)) return;
+
+    // Create a new URL item
+    final categoryId = appState.selectedCategoryId ?? (appState.categories.isNotEmpty ? appState.categories.first.id : '');
+
+    // Create a basic URL item
+    final newUrl = UrlItem(
+      url: text,
+      title: text, // Will be updated with metadata
+      categoryId: categoryId,
+    );
+
+    // Add the URL and fetch metadata
+    await container.read(appNotifier.notifier).addUrl(newUrl, fetchMetadata: true);
+
+    // Show notification
+    LocalNotification(
+      title: 'URL Imported',
+      body: 'Imported URL from clipboard',
+    ).show();
+  } catch (e) {
+    debugPrint('Error importing from clipboard: $e');
   }
 }
 
@@ -214,7 +318,12 @@ class MainApp extends ConsumerWidget {
       if (customTheme.isDark) {
         // If the selected theme is dark, use it as dark theme and default light theme
         darkTheme = customTheme.toMacosThemeData();
-        lightTheme = MacosThemeData.light();
+        lightTheme = MacosThemeData().copyWith(
+          primaryColor: Colors.grey.shade800,
+          iconButtonTheme: MacosIconButtonThemeData(
+            disabledColor: Colors.grey.shade800,
+          ),
+        );
       } else {
         // If the selected theme is light, use it as light theme and default dark theme
         lightTheme = customTheme.toMacosThemeData();
@@ -227,7 +336,12 @@ class MainApp extends ConsumerWidget {
       }
     } else {
       // Use default themes
-      lightTheme = MacosThemeData.light();
+      lightTheme = MacosThemeData().copyWith(
+        primaryColor: Colors.grey.shade800,
+        iconButtonTheme: MacosIconButtonThemeData(
+          disabledColor: Colors.grey.shade800,
+        ),
+      );
       darkTheme = MacosThemeData.dark().copyWith(
         primaryColor: Colors.white,
         iconButtonTheme: const MacosIconButtonThemeData(
@@ -241,7 +355,7 @@ class MainApp extends ConsumerWidget {
       title: 'Later',
       theme: lightTheme,
       darkTheme: darkTheme,
-      color: MacosColors.transparent,
+      color: Colors.transparent,
       themeMode: settings.themeMode,
       home: Builder(
         builder: (context) {
