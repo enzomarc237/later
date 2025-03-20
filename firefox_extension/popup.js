@@ -184,18 +184,11 @@ document.addEventListener("DOMContentLoaded", function () {
           exportedAt: new Date().toISOString(),
         };
 
-        // Try to open with Later app using URL scheme
-        return {
-          exportData,
-          promise: openWithLaterApp(exportData, tabs.length),
-        };
-      })
-      .then((result) => {
-        const { exportData, promise: success } = result;
-        if (!success) {
-          // Fallback to clipboard if URL scheme fails
-          copyToClipboard(exportData, tabs.length);
-        }
+        // Always copy to clipboard first
+        copyToClipboard(exportData, tabs.length, false);
+
+        // Then trigger the clipboard import feature in the macOS app
+        triggerClipboardImport(exportData, tabs.length);
       })
       .catch((error) => {
         console.error("Error in saveTabsToLater:", error);
@@ -206,85 +199,37 @@ document.addEventListener("DOMContentLoaded", function () {
           version: "1.0.0",
           exportedAt: new Date().toISOString(),
         };
-        // Fallback to clipboard if URL scheme fails
+        // Copy to clipboard as fallback
         copyToClipboard(fallbackExportData, tabs.length);
       });
   }
 
-  function openWithLaterApp(exportData, tabCount) {
-    return new Promise((resolve, reject) => {
-      // Get category name for the selected category
-      browser.storage.sync
-        .get("categories")
-        .then((data) => {
-          const categories = data.categories || [];
-          const selectedCategory = categories.find(
-            (cat) => cat.id === categorySelect.value,
-          );
-          const categoryName = selectedCategory ? selectedCategory.name : "";
+  function triggerClipboardImport(exportData, tabCount) {
+    // Create a URL to trigger the clipboard import feature
+    const laterUrl = `later:///clipboard-import`;
 
-          if (exportData.urls.length === 1) {
-            // For a single URL, use the simpler /add endpoint
-            const url = exportData.urls[0];
-            const laterUrl = `later:///add?url=${encodeURIComponent(
-              url.url,
-            )}&title=${encodeURIComponent(
-              url.title,
-            )}&category=${encodeURIComponent(categoryName)}`;
+    // Show status message before navigating
+    showStatus(`${tabCount} tab(s) sent to Later app.`, "success");
 
-            // Show status message before navigating
-            showStatus(`${tabCount} tab(s) sent to Later app.`, "success");
-
-            // Use simple window.location to open URL scheme
-            // This will close the popup but trigger the scheme handler
-            setTimeout(() => {
-              window.location.href = laterUrl;
-            }, 300); // Short delay to ensure status message is shown
-
-            resolve(true);
-          } else {
-            // For multiple URLs, use the /import endpoint with JSON data
-            const jsonString = JSON.stringify(exportData);
-            const laterUrl = `later:///import?data=${encodeURIComponent(
-              jsonString,
-            )}`;
-
-            // Check if the URL is too long (browsers have limits)
-            if (laterUrl.length > 2000) {
-              // Fallback to clipboard for large data
-              resolve(false);
-              return;
-            }
-
-            // Show status message before navigating
-            showStatus(`${tabCount} tab(s) sent to Later app.`, "success");
-
-            // Use simple window.location to open URL scheme
-            // This will close the popup but trigger the scheme handler
-            setTimeout(() => {
-              window.location.href = laterUrl;
-            }, 300); // Short delay to ensure status message is shown
-
-            resolve(true);
-          }
-        })
-        .catch((error) => {
-          console.error("Error getting categories:", error);
-          resolve(false);
-        });
-    });
+    // Use simple window.location to open URL scheme
+    // This will close the popup but trigger the scheme handler
+    setTimeout(() => {
+      window.location.href = laterUrl;
+    }, 300); // Short delay to ensure status message is shown
   }
 
-  function copyToClipboard(exportData, tabCount) {
-    // Copy to clipboard as fallback
+  function copyToClipboard(exportData, tabCount, showMessage = true) {
+    // Copy to clipboard
     const jsonString = JSON.stringify(exportData);
     navigator.clipboard
       .writeText(jsonString)
       .then(function () {
-        showStatus(
-          `${tabCount} tab(s) copied to clipboard. Paste into Later app to import.`,
-          "success",
-        );
+        if (showMessage) {
+          showStatus(
+            `${tabCount} tab(s) copied to clipboard. Paste into Later app to import.`,
+            "success",
+          );
+        }
       })
       .catch(function (err) {
         console.error("Could not copy text: ", err);
