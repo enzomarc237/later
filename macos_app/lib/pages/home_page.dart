@@ -99,6 +99,119 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    // Check clipboard for URLs when the app starts
+    _checkClipboardForUrls();
+
+    // Add listener to check clipboard when app is resumed
+    WidgetsBinding.instance.addObserver(_AppLifecycleObserver(
+      onResumed: _checkClipboardForUrls,
+    ));
+  }
+
+  @override
+  void dispose() {
+    // Remove the observer when the widget is disposed
+    WidgetsBinding.instance.removeObserver(_AppLifecycleObserver(
+      onResumed: _checkClipboardForUrls,
+    ));
+    super.dispose();
+  }
+
+  // Check clipboard for URLs and import if auto-import is enabled
+  Future<void> _checkClipboardForUrls() async {
+    // Check if auto-import is enabled in settings
+    final settings = ref.read(settingsNotifier);
+    if (!settings.autoImportFromClipboard) return;
+
+    try {
+      // Get clipboard data
+      final clipboardData = await Clipboard.getData(Clipboard.kTextPlain);
+      if (clipboardData == null || clipboardData.text == null) return;
+
+      final text = clipboardData.text!.trim();
+      if (text.isEmpty) return;
+
+      // Check if the text is a valid URL
+      if (!text.startsWith('http://') && !text.startsWith('https://')) {
+        // Try to prepend https:// and check if it's valid
+        if (!Uri.tryParse('https://$text')!.hasAuthority) return;
+      } else if (!Uri.tryParse(text)!.hasAuthority) {
+        return;
+      }
+
+      // Check if URL already exists
+      final appState = ref.read(appNotifier);
+      if (appState.urls.any((url) => url.url == text)) return;
+
+      // Show confirmation dialog
+      if (mounted) {
+        showMacosAlertDialog(
+          context: context,
+          builder: (_) => MacosAlertDialog(
+            appIcon: MacosIcon(
+              CupertinoIcons.link,
+              size: 56,
+              color: MacosTheme.of(context).primaryColor,
+            ),
+            title: const Text('Import URL from Clipboard'),
+            message: Text('Would you like to import the URL: $text?'),
+            primaryButton: PushButton(
+              controlSize: ControlSize.large,
+              onPressed: () {
+                Navigator.of(context).pop();
+                _importUrlFromClipboard(text);
+              },
+              child: const Text('Import'),
+            ),
+            secondaryButton: PushButton(
+              controlSize: ControlSize.large,
+              secondary: true,
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Cancel'),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error checking clipboard: $e');
+    }
+  }
+
+  // Import URL from clipboard
+  Future<void> _importUrlFromClipboard(String urlString) async {
+    try {
+      // Create a new URL item
+      final appState = ref.read(appNotifier);
+      final categoryId = appState.selectedCategoryId ?? (appState.categories.isNotEmpty ? appState.categories.first.id : '');
+
+      // Create a basic URL item
+      final newUrl = UrlItem(
+        url: urlString,
+        title: urlString, // Will be updated with metadata
+        categoryId: categoryId,
+      );
+
+      // Add the URL and fetch metadata
+      await ref.read(appNotifier.notifier).addUrl(newUrl, fetchMetadata: true);
+
+      // Show notification
+      LocalNotification(
+        title: 'URL Imported',
+        body: 'Imported URL from clipboard',
+      ).show();
+    } catch (e) {
+      debugPrint('Error importing URL from clipboard: $e');
+      if (mounted) {
+        _showErrorDialog(context, 'Import Failed', 'Failed to import URL from clipboard: $e');
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final appState = ref.watch(appNotifier);
     final selectedCategoryId = appState.selectedCategoryId;
@@ -146,7 +259,6 @@ class _HomePageState extends ConsumerState<HomePage> {
           builder: (context, scrollController) {
             return Column(
               children: [
-                if (appState.validationProgress != null) _buildValidationProgress(appState.validationProgress!),
                 Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Row(
