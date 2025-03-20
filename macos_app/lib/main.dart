@@ -74,7 +74,7 @@ Future<void> main() async {
   methodChannel.setMethodCallHandler((call) async {
     if (call.method == 'handleUrl') {
       final url = call.arguments as String;
-      handleIncomingUrl(url, container);
+      await handleIncomingUrl(url, container);
     }
     return null;
   });
@@ -87,7 +87,7 @@ Future<void> main() async {
     if (!Platform.isMacOS) {
       final initialLink = await getInitialLink();
       if (initialLink != null) {
-        handleIncomingUrl(initialLink, container);
+        await handleIncomingUrl(initialLink, container);
       }
     }
   } catch (e) {
@@ -99,9 +99,9 @@ Future<void> main() async {
   // Only try to use uni_links if not on macOS
   if (!Platform.isMacOS) {
     try {
-      linkStream.listen((String? link) {
+      linkStream.listen((String? link) async {
         if (link != null) {
-          handleIncomingUrl(link, container);
+          await handleIncomingUrl(link, container);
         }
       }, onError: (e) {
         debugPrint('Note: uni_links stream not available: $e');
