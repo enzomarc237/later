@@ -178,29 +178,44 @@ code_sign_if_enabled() {
 if [[ "$CONFIGURATION" == "Debug" ]]; then
   install_framework "${BUILT_PRODUCTS_DIR}/appkit_ui_element_colors/appkit_ui_element_colors.framework"
   install_framework "${BUILT_PRODUCTS_DIR}/file_picker/file_picker.framework"
+  install_framework "${BUILT_PRODUCTS_DIR}/local_notifier/local_notifier.framework"
   install_framework "${BUILT_PRODUCTS_DIR}/macos_ui/macos_ui.framework"
   install_framework "${BUILT_PRODUCTS_DIR}/macos_window_utils/macos_window_utils.framework"
+  install_framework "${BUILT_PRODUCTS_DIR}/path_provider_foundation/path_provider_foundation.framework"
+  install_framework "${BUILT_PRODUCTS_DIR}/screen_retriever_macos/screen_retriever_macos.framework"
   install_framework "${BUILT_PRODUCTS_DIR}/shared_preferences_foundation/shared_preferences_foundation.framework"
+  install_framework "${BUILT_PRODUCTS_DIR}/sqflite_darwin/sqflite_darwin.framework"
   install_framework "${BUILT_PRODUCTS_DIR}/system_tray/system_tray.framework"
   install_framework "${BUILT_PRODUCTS_DIR}/url_launcher_macos/url_launcher_macos.framework"
+  install_framework "${BUILT_PRODUCTS_DIR}/window_manager/window_manager.framework"
 fi
 if [[ "$CONFIGURATION" == "Profile" ]]; then
   install_framework "${BUILT_PRODUCTS_DIR}/appkit_ui_element_colors/appkit_ui_element_colors.framework"
   install_framework "${BUILT_PRODUCTS_DIR}/file_picker/file_picker.framework"
+  install_framework "${BUILT_PRODUCTS_DIR}/local_notifier/local_notifier.framework"
   install_framework "${BUILT_PRODUCTS_DIR}/macos_ui/macos_ui.framework"
   install_framework "${BUILT_PRODUCTS_DIR}/macos_window_utils/macos_window_utils.framework"
+  install_framework "${BUILT_PRODUCTS_DIR}/path_provider_foundation/path_provider_foundation.framework"
+  install_framework "${BUILT_PRODUCTS_DIR}/screen_retriever_macos/screen_retriever_macos.framework"
   install_framework "${BUILT_PRODUCTS_DIR}/shared_preferences_foundation/shared_preferences_foundation.framework"
+  install_framework "${BUILT_PRODUCTS_DIR}/sqflite_darwin/sqflite_darwin.framework"
   install_framework "${BUILT_PRODUCTS_DIR}/system_tray/system_tray.framework"
   install_framework "${BUILT_PRODUCTS_DIR}/url_launcher_macos/url_launcher_macos.framework"
+  install_framework "${BUILT_PRODUCTS_DIR}/window_manager/window_manager.framework"
 fi
 if [[ "$CONFIGURATION" == "Release" ]]; then
   install_framework "${BUILT_PRODUCTS_DIR}/appkit_ui_element_colors/appkit_ui_element_colors.framework"
   install_framework "${BUILT_PRODUCTS_DIR}/file_picker/file_picker.framework"
+  install_framework "${BUILT_PRODUCTS_DIR}/local_notifier/local_notifier.framework"
   install_framework "${BUILT_PRODUCTS_DIR}/macos_ui/macos_ui.framework"
   install_framework "${BUILT_PRODUCTS_DIR}/macos_window_utils/macos_window_utils.framework"
+  install_framework "${BUILT_PRODUCTS_DIR}/path_provider_foundation/path_provider_foundation.framework"
+  install_framework "${BUILT_PRODUCTS_DIR}/screen_retriever_macos/screen_retriever_macos.framework"
   install_framework "${BUILT_PRODUCTS_DIR}/shared_preferences_foundation/shared_preferences_foundation.framework"
+  install_framework "${BUILT_PRODUCTS_DIR}/sqflite_darwin/sqflite_darwin.framework"
   install_framework "${BUILT_PRODUCTS_DIR}/system_tray/system_tray.framework"
   install_framework "${BUILT_PRODUCTS_DIR}/url_launcher_macos/url_launcher_macos.framework"
+  install_framework "${BUILT_PRODUCTS_DIR}/window_manager/window_manager.framework"
 fi
 if [ "${COCOAPODS_PARALLEL_CODE_SIGN}" == "true" ]; then
   wait

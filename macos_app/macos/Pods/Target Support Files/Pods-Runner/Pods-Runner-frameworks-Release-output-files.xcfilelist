@@ -1,7 +1,12 @@
 ${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/appkit_ui_element_colors.framework
 ${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/file_picker.framework
+${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/local_notifier.framework
 ${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/macos_ui.framework
 ${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/macos_window_utils.framework
+${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/path_provider_foundation.framework
+${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/screen_retriever_macos.framework
 ${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/shared_preferences_foundation.framework
+${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/sqflite_darwin.framework
 ${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/system_tray.framework
 ${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/url_launcher_macos.framework
+${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/window_manager.framework

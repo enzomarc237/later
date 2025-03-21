@@ -8,6 +8,21 @@ import '../utils/metadata_service.dart';
 import '../utils/url_validator.dart';
 import 'providers.dart';
 
+class ValidationProgress {
+  final int completed;
+  final int total;
+  final String currentUrl;
+
+  ValidationProgress({
+    required this.completed,
+    required this.total,
+    required this.currentUrl,
+  });
+
+  double get percentage => total > 0 ? (completed / total) * 100 : 0;
+  bool get isComplete => completed >= total;
+}
+
 class AppState {
   final String message;
   final String appVersion;
@@ -21,6 +36,9 @@ class AppState {
   final bool selectionMode;
   final Set<String> selectedUrlIds;
 
+  // Validation progress
+  final ValidationProgress? validationProgress;
+
   AppState({
     required this.message,
     required this.appVersion,
@@ -31,6 +49,7 @@ class AppState {
     this.isLoading = false,
     this.selectionMode = false,
     this.selectedUrlIds = const {},
+    this.validationProgress,
   });
 
   AppState copyWith({
@@ -45,6 +64,8 @@ class AppState {
     bool? selectionMode,
     Set<String>? selectedUrlIds,
     bool clearSelectedUrls = false,
+    ValidationProgress? validationProgress,
+    bool clearValidationProgress = false,
   }) {
     return AppState(
       message: message ?? this.message,
@@ -56,6 +77,7 @@ class AppState {
       isLoading: isLoading ?? this.isLoading,
       selectionMode: selectionMode ?? this.selectionMode,
       selectedUrlIds: clearSelectedUrls ? {} : selectedUrlIds ?? this.selectedUrlIds,
+      validationProgress: clearValidationProgress ? null : validationProgress ?? this.validationProgress,
     );
   }
 
@@ -432,34 +454,61 @@ class AppNotifier extends Notifier<AppState> {
     return status;
   }
 
-  /// Validates all URLs in the app
+  /// Validates all URLs in the app with progress updates
   Future<Map<String, UrlStatus>> validateAllUrls() async {
     if (state.urls.isEmpty) return {};
 
-    state = state.copyWith(isLoading: true);
-
+    final urlStrings = state.urls.map((u) => u.url).toList();
     final results = <String, UrlStatus>{};
     final updatedUrls = [...state.urls];
     final now = DateTime.now();
 
-    for (int i = 0; i < updatedUrls.length; i++) {
-      final url = updatedUrls[i];
-      final status = await _urlValidator.validateUrl(url.url);
+    try {
+      await _urlValidator.validateUrls(
+        urlStrings,
+        onProgress: (completed, total, currentUrl) {
+          state = state.copyWith(
+            validationProgress: ValidationProgress(
+              completed: completed,
+              total: total,
+              currentUrl: currentUrl,
+            ),
+          );
+        },
+        onMetadataUpdated: (url, metadata) {
+          final index = updatedUrls.indexWhere((u) => u.url == url);
+          if (index >= 0) {
+            final existingMetadata = updatedUrls[index].metadata ?? {};
+            updatedUrls[index] = updatedUrls[index].copyWith(
+              metadata: {...existingMetadata, ...metadata},
+            );
+          }
+        },
+      ).then((validationResults) {
+        results.addAll(validationResults);
 
-      updatedUrls[i] = url.copyWith(
-        status: status,
-        lastChecked: now,
+        // Update URL statuses
+        for (var i = 0; i < updatedUrls.length; i++) {
+          final status = validationResults[updatedUrls[i].url];
+          if (status != null) {
+            updatedUrls[i] = updatedUrls[i].copyWith(
+              status: status,
+              lastChecked: now,
+            );
+          }
+        }
+      });
+
+      state = state.copyWith(
+        urls: updatedUrls,
+        clearValidationProgress: true,
       );
 
-      results[url.id] = status;
+      _saveUrls();
+    } catch (e) {
+      debugPrint('Error validating URLs: $e');
+      state = state.copyWith(clearValidationProgress: true);
     }
-
-    state = state.copyWith(
-      urls: updatedUrls,
-      isLoading: false,
-    );
-
-    _saveUrls();
 
     return results;
   }

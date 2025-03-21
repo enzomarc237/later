@@ -45,6 +45,7 @@ class KeyboardShortcuts {
       // Navigation shortcuts
       const SingleActivator(LogicalKeyboardKey.keyH): () {
         // Go to Home - already on home, so just clear selected category
+        Navigator.of(context).popUntil((route) => route.navigator!.canPop() == false);
         appNotifierRef.selectCategory(null);
       },
       const SingleActivator(LogicalKeyboardKey.keyS): () {

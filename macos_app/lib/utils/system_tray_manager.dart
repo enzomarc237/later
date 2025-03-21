@@ -39,7 +39,7 @@ class SystemTrayManager with WindowListener {
     // Initialize system tray
     String iconPath = Platform.isWindows ? 'assets/icons/mac256.png' : 'assets/icons/mac256.png';
 
-    await _systemTray.initSystemTray(title: "Later", iconPath: iconPath, toolTip: "Later Bookmarker is running in background");
+    await _systemTray.initSystemTray(title: "", iconPath: iconPath, toolTip: "Later Bookmarker is running in background");
 
     // Create context menu items
     List<MenuItem> items = [
@@ -47,7 +47,7 @@ class SystemTrayManager with WindowListener {
         label: 'Open Later App',
         onClicked: () => _showApp(),
       ),
-      MenuItem(label: ''),
+      MenuItem(label: '--------------'),
       MenuItem(
         label: 'Import Tabs from Clipboard',
         onClicked: () => _importTabsFromClipboard(),
@@ -153,6 +153,9 @@ class SystemTrayManager with WindowListener {
           // Check if it's in our export format
           if (jsonData.containsKey('urls') && jsonData.containsKey('exportedAt')) {
             final importData = ExportData.fromJson(jsonData);
+
+            // Show application window if minimized
+            await windowManager.show();
 
             // Show import dialog with the URLs
             final selectedUrls = await DialogService.showImportUrlsDialog(
