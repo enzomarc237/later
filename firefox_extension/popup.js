@@ -9,6 +9,9 @@ document.addEventListener("DOMContentLoaded", function () {
   const saveAllTabsBtn = document.getElementById("saveAllTabs");
   const statusDiv = document.getElementById("status");
 
+  // Import generateId
+  import { generateId } from '../common/utils.js';
+
   // Load categories from storage
   loadCategories();
 
