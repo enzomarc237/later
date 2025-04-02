@@ -728,7 +728,7 @@ class AppNotifier extends Notifier<AppState> {
     }
 
     // Show notification with results
-    final notification = LocalNotification(
+    final notification = local_notifier.LocalNotification(
       title: 'URLs Opened',
       body:
           'Successfully opened $successCount URLs. Failed to open $failureCount URLs.',
