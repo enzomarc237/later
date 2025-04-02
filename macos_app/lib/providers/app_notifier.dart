@@ -72,12 +72,17 @@ class AppState {
       appVersion: appVersion ?? this.appVersion,
       currentDirectory: currentDirectory ?? this.currentDirectory,
       categories: categories ?? this.categories,
-      selectedCategoryId: clearSelectedCategory ? null : selectedCategoryId ?? this.selectedCategoryId,
+      selectedCategoryId: clearSelectedCategory
+          ? null
+          : selectedCategoryId ?? this.selectedCategoryId,
       urls: urls ?? this.urls,
       isLoading: isLoading ?? this.isLoading,
       selectionMode: selectionMode ?? this.selectionMode,
-      selectedUrlIds: clearSelectedUrls ? {} : selectedUrlIds ?? this.selectedUrlIds,
-      validationProgress: clearValidationProgress ? null : validationProgress ?? this.validationProgress,
+      selectedUrlIds:
+          clearSelectedUrls ? {} : selectedUrlIds ?? this.selectedUrlIds,
+      validationProgress: clearValidationProgress
+          ? null
+          : validationProgress ?? this.validationProgress,
     );
   }
 
@@ -85,12 +90,28 @@ class AppState {
   bool operator ==(covariant AppState other) {
     if (identical(this, other)) return true;
 
-    return other.message == message && other.appVersion == appVersion && other.currentDirectory == currentDirectory && listEquals(other.categories, categories) && other.selectedCategoryId == selectedCategoryId && listEquals(other.urls, urls) && other.isLoading == isLoading && other.selectionMode == selectionMode && setEquals(other.selectedUrlIds, selectedUrlIds);
+    return other.message == message &&
+        other.appVersion == appVersion &&
+        other.currentDirectory == currentDirectory &&
+        listEquals(other.categories, categories) &&
+        other.selectedCategoryId == selectedCategoryId &&
+        listEquals(other.urls, urls) &&
+        other.isLoading == isLoading &&
+        other.selectionMode == selectionMode &&
+        setEquals(other.selectedUrlIds, selectedUrlIds);
   }
 
   @override
   int get hashCode {
-    return message.hashCode ^ appVersion.hashCode ^ currentDirectory.hashCode ^ categories.hashCode ^ selectedCategoryId.hashCode ^ urls.hashCode ^ isLoading.hashCode ^ selectionMode.hashCode ^ selectedUrlIds.hashCode;
+    return message.hashCode ^
+        appVersion.hashCode ^
+        currentDirectory.hashCode ^
+        categories.hashCode ^
+        selectedCategoryId.hashCode ^
+        urls.hashCode ^
+        isLoading.hashCode ^
+        selectionMode.hashCode ^
+        selectedUrlIds.hashCode;
   }
 
   // Get the currently visible URLs (filtered by category)
@@ -121,7 +142,8 @@ class AppState {
 
   // Get URLs for the selected category or all URLs if no category is selected
   List<UrlItem> get selectedCategoryUrls {
-    if (selectedCategoryId == null) return urls; // Return all URLs when no category is selected
+    if (selectedCategoryId == null)
+      return urls; // Return all URLs when no category is selected
     return urls.where((url) => url.categoryId == selectedCategoryId).toList();
   }
 }
@@ -219,10 +241,12 @@ class AppNotifier extends Notifier<AppState> {
   }
 
   void deleteCategory(String categoryId) {
-    final updatedCategories = state.categories.where((c) => c.id != categoryId).toList();
+    final updatedCategories =
+        state.categories.where((c) => c.id != categoryId).toList();
 
     // Also delete all URLs in this category
-    final updatedUrls = state.urls.where((url) => url.categoryId != categoryId).toList();
+    final updatedUrls =
+        state.urls.where((url) => url.categoryId != categoryId).toList();
 
     // Clear selected category if it's the one being deleted
     final clearSelected = state.selectedCategoryId == categoryId;
@@ -267,7 +291,9 @@ class AppNotifier extends Notifier<AppState> {
   UrlItem enrichUrlWithMetadata(UrlItem url, WebsiteMetadata metadata) {
     // Only update title and description if they're empty
     final title = url.title.isEmpty ? metadata.title : url.title;
-    final description = url.description?.isEmpty ?? true ? metadata.description : url.description;
+    final description = url.description?.isEmpty ?? true
+        ? metadata.description
+        : url.description;
 
     // Create or update metadata map
     final existingMetadata = url.metadata ?? {};
@@ -397,7 +423,9 @@ class AppNotifier extends Notifier<AppState> {
   void deleteSelectedUrls() {
     if (state.selectedUrlIds.isEmpty) return;
 
-    final updatedUrls = state.urls.where((url) => !state.selectedUrlIds.contains(url.id)).toList();
+    final updatedUrls = state.urls
+        .where((url) => !state.selectedUrlIds.contains(url.id))
+        .toList();
 
     state = state.copyWith(
       urls: updatedUrls,
@@ -515,7 +543,8 @@ class AppNotifier extends Notifier<AppState> {
 
   /// Validates all URLs in a specific category
   Future<Map<String, UrlStatus>> validateCategoryUrls(String categoryId) async {
-    final categoryUrls = state.urls.where((u) => u.categoryId == categoryId).toList();
+    final categoryUrls =
+        state.urls.where((u) => u.categoryId == categoryId).toList();
     if (categoryUrls.isEmpty) return {};
 
     state = state.copyWith(isLoading: true);
@@ -658,7 +687,8 @@ class AppNotifier extends Notifier<AppState> {
 
   void importData(ExportData data) {
     // Preserve existing categories if the imported data has an empty categories array
-    final categories = data.categories.isEmpty ? state.categories : data.categories;
+    final categories =
+        data.categories.isEmpty ? state.categories : data.categories;
 
     state = state.copyWith(
       categories: categories,
@@ -668,6 +698,41 @@ class AppNotifier extends Notifier<AppState> {
 
     _saveCategories();
     _saveUrls();
+  }
+
+  /// Open all selected URLs in browser
+  Future<void> openSelectedUrls() async {
+    if (state.selectedUrlIds.isEmpty) return;
+
+    // Get selected URLs
+    final selectedUrls = state.urls
+        .where((url) => state.selectedUrlIds.contains(url.id))
+        .toList();
+    int successCount = 0;
+    int failureCount = 0;
+
+    for (final url in selectedUrls) {
+      try {
+        final uri = Uri.parse(url.url);
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri);
+          successCount++;
+        } else {
+          failureCount++;
+          debugPrint('Could not launch URL: ${url.url}');
+        }
+      } catch (e) {
+        failureCount++;
+        debugPrint('Error opening URL ${url.url}: $e');
+      }
+    }
+
+    // Show notification with results
+    LocalNotification(
+      title: 'URLs Opened',
+      body:
+          'Successfully opened $successCount URLs. Failed to open $failureCount URLs.',
+    ).show();
   }
 
   // Private methods for persistence
