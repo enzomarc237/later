@@ -714,8 +714,8 @@ class AppNotifier extends Notifier<AppState> {
     for (final url in selectedUrls) {
       try {
         final uri = Uri.parse(url.url);
-        if (await canLaunchUrl(uri)) {
-          await launchUrl(uri);
+        if (await canLaunch(uri.toString())) {
+          await launch(uri.toString());
           successCount++;
         } else {
           failureCount++;
@@ -728,7 +728,7 @@ class AppNotifier extends Notifier<AppState> {
     }
 
     // Show notification with results
-    LocalNotification(
+    final notification = LocalNotification(
       title: 'URLs Opened',
       body:
           'Successfully opened $successCount URLs. Failed to open $failureCount URLs.',
