@@ -10,9 +10,11 @@ import '../models/export_data.dart';
 import '../models/url_item.dart';
 import '../pages/export_dialog.dart';
 import 'export_service.dart';
+import 'browser_bookmark_parser.dart';
 
 class ImportExportManager {
   final ExportService _exportService = ExportService();
+  final BrowserBookmarkParser _browserParser = BrowserBookmarkParser();
 
   // Export bookmarks to a file
   Future<void> exportBookmarks(
@@ -38,6 +40,9 @@ class ImportExportManager {
       case ExportFormat.html:
         content = _exportService.toHTML(data);
         break;
+      case ExportFormat.xml:
+        content = _exportService.toXML(data);
+        break;
     }
 
     final file = File(outputPath);
@@ -48,7 +53,7 @@ class ImportExportManager {
   Future<List<UrlItem>?> importBookmarks(BuildContext context) async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
-      allowedExtensions: ['json', 'csv', 'html'],
+      allowedExtensions: ['json', 'csv', 'html', 'xml', 'plist'],
       allowMultiple: false,
     );
 
@@ -57,8 +62,23 @@ class ImportExportManager {
     final file = File(result.files.first.path!);
     final content = await file.readAsString();
     final extension = path.extension(file.path).toLowerCase();
+    final fileName = path.basename(file.path).toLowerCase();
 
     try {
+      // Check if this is a browser bookmark file
+      if (fileName.contains('bookmark') ||
+          content.contains('NETSCAPE-Bookmark-file') ||
+          content.contains('"roots"') ||
+          content.contains('WebBookmarkType')) {
+        try {
+          return _browserParser.parseAuto(content).urls;
+        } catch (e) {
+          debugPrint('Failed to parse as browser bookmark: $e');
+          // Fall back to standard formats
+        }
+      }
+
+      // Try standard formats
       switch (extension) {
         case '.json':
           final json = jsonDecode(content) as Map<String, dynamic>;
@@ -67,6 +87,8 @@ class ImportExportManager {
           return _exportService.fromCSV(content).urls;
         case '.html':
           return _exportService.fromHTML(content).urls;
+        case '.xml':
+          return _exportService.fromXML(content).urls;
         default:
           throw FormatException('Unsupported file format: $extension');
       }
@@ -122,7 +144,7 @@ class ImportExportManager {
       if (clipboardData?.text == null) return null;
 
       final content = clipboardData!.text!;
-      
+
       // Try to parse as JSON first
       try {
         final json = jsonDecode(content) as Map<String, dynamic>;
@@ -138,8 +160,31 @@ class ImportExportManager {
               try {
                 return _exportService.fromHTML(content).urls;
               } catch (_) {
-                // If all parsing attempts fail, throw error
-                throw FormatException('Clipboard content is not in a recognized format');
+                // If HTML parsing fails, try XML
+                if (content.toLowerCase().contains('<?xml') ||
+                    content.toLowerCase().contains('<bookmarks')) {
+                  try {
+                    return _exportService.fromXML(content).urls;
+                  } catch (_) {
+                    // If all parsing attempts fail, throw error
+                    throw FormatException(
+                        'Clipboard content is not in a recognized format');
+                  }
+                } else {
+                  // If all parsing attempts fail, throw error
+                  throw FormatException(
+                      'Clipboard content is not in a recognized format');
+                }
+              }
+            } else if (content.toLowerCase().contains('<?xml') ||
+                content.toLowerCase().contains('<bookmarks')) {
+              // Try XML directly if it looks like XML
+              try {
+                return _exportService.fromXML(content).urls;
+              } catch (_) {
+                // If XML parsing fails, throw error
+                throw FormatException(
+                    'Clipboard content is not in a recognized format');
               }
             }
           }
@@ -170,7 +215,8 @@ class ImportExportManager {
   // Get the default export directory
   Future<String> getDefaultExportDirectory() async {
     final documentsDir = await getApplicationDocumentsDirectory();
-    final exportDir = Directory(path.join(documentsDir.path, 'Later', 'exports'));
+    final exportDir =
+        Directory(path.join(documentsDir.path, 'Later', 'exports'));
     if (!await exportDir.exists()) {
       await exportDir.create(recursive: true);
     }
@@ -180,7 +226,8 @@ class ImportExportManager {
   // Generate a default filename based on the current date
   String generateDefaultFilename(ExportFormat format) {
     final now = DateTime.now();
-    final timestamp = '${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}';
+    final timestamp =
+        '${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}';
     return 'later_bookmarks_$timestamp${format.fileExtension}';
   }
 }

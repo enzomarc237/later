@@ -7,6 +7,7 @@ enum ExportFormat {
   json,
   csv,
   html,
+  xml,
 }
 
 extension ExportFormatExtension on ExportFormat {
@@ -18,6 +19,21 @@ extension ExportFormatExtension on ExportFormat {
         return 'CSV';
       case ExportFormat.html:
         return 'HTML';
+      case ExportFormat.xml:
+        return 'XML';
+    }
+  }
+
+  String get description {
+    switch (this) {
+      case ExportFormat.json:
+        return 'Standard format with all metadata. Best for backup and import back to Later.';
+      case ExportFormat.csv:
+        return 'Simple spreadsheet format. Compatible with most applications.';
+      case ExportFormat.html:
+        return 'Formatted HTML bookmarks page. Good for viewing in a browser.';
+      case ExportFormat.xml:
+        return 'XML format compatible with browser bookmark systems.';
     }
   }
 
@@ -29,6 +45,8 @@ extension ExportFormatExtension on ExportFormat {
         return '.csv';
       case ExportFormat.html:
         return '.html';
+      case ExportFormat.xml:
+        return '.xml';
     }
   }
 }
@@ -89,6 +107,13 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
               );
             }).toList(),
           ),
+          const SizedBox(height: 8),
+          Text(
+            _selectedFormat.description,
+            style: MacosTheme.of(context).typography.caption1.copyWith(
+                  color: MacosColors.systemGrayColor,
+                ),
+          ),
           const SizedBox(height: 16),
           Text(
             'Filename:',
@@ -108,6 +133,13 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
           Text(
             'This will export all your bookmarks and categories to a single file.',
             style: MacosTheme.of(context).typography.body.copyWith(
+                  color: MacosColors.systemGrayColor,
+                ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'You can import this file back into Later or use it with other applications.',
+            style: MacosTheme.of(context).typography.caption1.copyWith(
                   color: MacosColors.systemGrayColor,
                 ),
           ),

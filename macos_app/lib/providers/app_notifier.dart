@@ -1,6 +1,8 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first, avoid_print
 import 'package:flutter/foundation.dart' hide Category;
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:local_notifier/local_notifier.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../models/models.dart';
 import '../utils/backup_service.dart';
@@ -700,7 +702,7 @@ class AppNotifier extends Notifier<AppState> {
     _saveUrls();
   }
 
-  /// Open all selected URLs in browser
+  /// Open all selected URLs in browser with rate limiting to prevent browser crashes
   Future<void> openSelectedUrls() async {
     if (state.selectedUrlIds.isEmpty) return;
 
@@ -711,12 +713,27 @@ class AppNotifier extends Notifier<AppState> {
     int successCount = 0;
     int failureCount = 0;
 
+    // Set delay between opening URLs based on count to prevent browser crashes
+    // More URLs = longer delay between each
+    final int delayMs = selectedUrls.length > 20
+        ? 500
+        : selectedUrls.length > 10
+            ? 300
+            : selectedUrls.length > 5
+                ? 200
+                : 100;
+
     for (final url in selectedUrls) {
       try {
         final uri = Uri.parse(url.url);
-        if (await canLaunch(uri.toString())) {
-          await launch(uri.toString());
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri);
           successCount++;
+
+          // Add delay between opening URLs to prevent browser from being overwhelmed
+          if (selectedUrls.indexOf(url) < selectedUrls.length - 1) {
+            await Future.delayed(Duration(milliseconds: delayMs));
+          }
         } else {
           failureCount++;
           debugPrint('Could not launch URL: ${url.url}');
@@ -728,11 +745,17 @@ class AppNotifier extends Notifier<AppState> {
     }
 
     // Show notification with results
-    final notification = local_notifier.LocalNotification(
+    LocalNotification(
       title: 'URLs Opened',
       body:
           'Successfully opened $successCount URLs. Failed to open $failureCount URLs.',
     ).show();
+
+    // Exit selection mode after opening URLs
+    state = state.copyWith(
+      selectionMode: false,
+      clearSelectedUrls: true,
+    );
   }
 
   // Private methods for persistence

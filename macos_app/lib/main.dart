@@ -1,16 +1,20 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter/material.dart' hide VoidCallbackIntent, VoidCallbackAction;
-import 'package:flutter/foundation.dart' hide Category;
+import 'package:flutter/material.dart'
+    hide VoidCallbackIntent, VoidCallbackAction;
 import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:local_notifier/local_notifier.dart';
 import 'package:macos_ui/macos_ui.dart';
+import 'package:path/path.dart' as path;
+import 'package:path_provider/path_provider.dart';
 import 'package:pubspec_parse/pubspec_parse.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uni_links/uni_links.dart';
 import 'package:window_manager/window_manager.dart';
+
+import 'utils/platform_menu.dart';
 
 import 'models/models.dart';
 import 'pages/main_view.dart';
@@ -45,7 +49,7 @@ Future<void> main() async {
   debugPrint('version from pubspec.yaml: $version');
   sharedPreferences.setString('appVersion', version.toString());
 
-  // Get initial data folder path from settings
+  // Get initial data folder path from settings or set a default
   String initialDataFolderPath = '';
   final settingsJson = sharedPreferences.getString('settings');
   if (settingsJson != null) {
@@ -57,14 +61,65 @@ Future<void> main() async {
     }
   }
 
+  // Set or validate the data folder path
+  try {
+    // Get the application documents directory as our default location
+    final appDocDir = await getApplicationDocumentsDirectory();
+    final defaultPath = path.join(appDocDir.path, 'Later');
+
+    // If no data folder path is set, use the default
+    if (initialDataFolderPath.isEmpty) {
+      initialDataFolderPath = defaultPath;
+      debugPrint('Using default data folder path: $initialDataFolderPath');
+    } else {
+      // Test if the configured path is accessible
+      final testFile = File(path.join(initialDataFolderPath, '.write_test'));
+      try {
+        await testFile.writeAsString('test');
+        await testFile.delete();
+        debugPrint('Validated data folder path: $initialDataFolderPath');
+      } catch (e) {
+        // Path is not accessible, reset to default
+        debugPrint(
+            'Data folder path is not accessible: $initialDataFolderPath');
+        debugPrint('Error: $e');
+        debugPrint('Resetting to default path: $defaultPath');
+        initialDataFolderPath = defaultPath;
+      }
+    }
+
+    // Create the directory if it doesn't exist
+    final directory = Directory(initialDataFolderPath);
+    if (!await directory.exists()) {
+      await directory.create(recursive: true);
+    }
+
+    // Save this path in settings
+    if (settingsJson != null) {
+      try {
+        final settingsMap = jsonDecode(settingsJson) as Map<String, dynamic>;
+        settingsMap['dataFolderPath'] = initialDataFolderPath;
+        await sharedPreferences.setString('settings', jsonEncode(settingsMap));
+      } catch (e) {
+        debugPrint('Error saving data folder path: $e');
+      }
+    }
+  } catch (e) {
+    debugPrint('Error setting up data folder path: $e');
+  }
+
   // Create ProviderContainer to access providers before runApp
   final container = ProviderContainer(
     overrides: [
       sharedPreferencesProvider.overrideWithValue(sharedPreferences),
-      // Initialize dataFolderPathProvider with the path from settings
+      // Initialize dataFolderPathProvider with the validated path
       dataFolderPathProvider.overrideWith((ref) => initialDataFolderPath),
     ],
   );
+
+  // Initialize the FileStorageService with the validated path
+  final fileStorage = container.read(fileStorageServiceProvider);
+  await fileStorage.initialize();
 
   // Initialize system tray (which also initializes window_manager)
   await container.read(systemTrayManagerProvider).initSystemTray();
@@ -114,7 +169,13 @@ Future<void> main() async {
 
   runApp(
     ProviderScope(
-      parent: container,
+      overrides: [
+        // Override the providers with the values we've already initialized
+        sharedPreferencesProvider.overrideWithValue(sharedPreferences),
+        dataFolderPathProvider.overrideWith((ref) => initialDataFolderPath),
+        // Override the FileStorageService with the already initialized instance
+        fileStorageServiceProvider.overrideWithValue(fileStorage),
+      ],
       child: const MainApp(),
     ),
   );
@@ -125,7 +186,13 @@ Future<void> handleIncomingUrl(String url, ProviderContainer container) async {
 
   try {
     // Parse the URL
-    final uri = Uri.parse(url);
+    Uri uri;
+    try {
+      uri = Uri.parse(url);
+    } catch (e) {
+      debugPrint('Error parsing URL: $e');
+      return;
+    }
 
     // Check if it's our custom scheme
     if (uri.scheme == 'later') {
@@ -144,41 +211,49 @@ Future<void> handleIncomingUrl(String url, ProviderContainer container) async {
 
           // Find or create category if specified
           String categoryId = '';
-          if (categoryName != null && categoryName.isNotEmpty) {
-            // Check if category exists
-            final categories = appState.categories;
-            final existingCategory = categories.where((c) => c.name.toLowerCase() == categoryName.toLowerCase()).toList();
+          try {
+            if (categoryName != null && categoryName.isNotEmpty) {
+              // Check if category exists
+              final categories = appState.categories;
+              final existingCategory = categories
+                  .where(
+                      (c) => c.name.toLowerCase() == categoryName.toLowerCase())
+                  .toList();
 
-            if (existingCategory.isNotEmpty) {
-              categoryId = existingCategory.first.id;
-            } else {
-              // Create new category
-              final newCategory = Category(name: categoryName);
-              appNotifierRef.addCategory(newCategory);
-              categoryId = newCategory.id;
+              if (existingCategory.isNotEmpty) {
+                categoryId = existingCategory.first.id;
+              } else {
+                // Create new category
+                final newCategory = Category(name: categoryName);
+                appNotifierRef.addCategory(newCategory);
+                categoryId = newCategory.id;
+              }
+            } else if (appState.categories.isNotEmpty) {
+              // Use first category if none specified
+              categoryId = appState.categories.first.id;
             }
-          } else if (appState.categories.isNotEmpty) {
-            // Use first category if none specified
-            categoryId = appState.categories.first.id;
+
+            // Create and add URL
+            final newUrl = UrlItem(
+              url: urlToAdd,
+              title: title,
+              description: description,
+              categoryId: categoryId,
+            );
+
+            await appNotifierRef.addUrl(newUrl);
+
+            // Show notification
+            LocalNotification(
+              title: 'URL Added',
+              body:
+                  'Added URL: ${title.length > 30 ? "${title.substring(0, 27)}..." : title}',
+            ).show();
+
+            debugPrint('Added URL: $urlToAdd to category: $categoryName');
+          } catch (e) {
+            debugPrint('Error adding URL to database: $e');
           }
-
-          // Create and add URL
-          final newUrl = UrlItem(
-            url: urlToAdd,
-            title: title,
-            description: description,
-            categoryId: categoryId,
-          );
-
-          appNotifierRef.addUrl(newUrl);
-
-          // Show notification
-          LocalNotification(
-            title: 'URL Added',
-            body: 'Added URL: ${title.length > 30 ? title.substring(0, 27) + '...' : title}',
-          ).show();
-
-          debugPrint('Added URL: $urlToAdd to category: $categoryName');
         }
       } else if (uri.path == '/import') {
         // Handle bulk import
@@ -192,10 +267,12 @@ Future<void> handleIncomingUrl(String url, ProviderContainer container) async {
             // Show notification
             LocalNotification(
               title: 'URLs Imported',
-              body: 'Imported ${importData.urls.length} URLs and ${importData.categories.length} categories',
+              body:
+                  'Imported ${importData.urls.length} URLs and ${importData.categories.length} categories',
             ).show();
 
-            debugPrint('Imported ${importData.urls.length} URLs and ${importData.categories.length} categories');
+            debugPrint(
+                'Imported ${importData.urls.length} URLs and ${importData.categories.length} categories');
           } catch (e) {
             debugPrint('Error parsing import data: $e');
           }
@@ -212,23 +289,18 @@ Future<void> handleIncomingUrl(String url, ProviderContainer container) async {
         // We need to use a slight delay to ensure the app is fully in the foreground
         Future.delayed(const Duration(milliseconds: 300), () {
           // Find the HomePage instance and trigger clipboard import
-          final navigatorState = DialogService.navigatorKey.currentState;
-          if (navigatorState != null) {
-            final context = navigatorState.context;
-
-            // Force clipboard import regardless of settings
-            _forceClipboardImport(context, container);
-          }
+          // Force clipboard import regardless of settings
+          _forceClipboardImport(container);
         });
       }
     }
   } catch (e) {
-    debugPrint('Error handling URL: $e');
+    debugPrint('Error handling URL scheme: $e');
   }
 }
 
 // Force clipboard import regardless of settings
-void _forceClipboardImport(BuildContext context, ProviderContainer container) async {
+void _forceClipboardImport(ProviderContainer container) async {
   try {
     // Get clipboard data
     final clipboardData = await Clipboard.getData(Clipboard.kTextPlain);
@@ -243,7 +315,8 @@ void _forceClipboardImport(BuildContext context, ProviderContainer container) as
         final decodedData = jsonDecode(text) as Map<String, dynamic>;
 
         // Check if it has the expected structure
-        if (decodedData.containsKey('urls') && decodedData.containsKey('version')) {
+        if (decodedData.containsKey('urls') &&
+            decodedData.containsKey('version')) {
           final importData = ExportData.fromJson(decodedData);
           container.read(appNotifier.notifier).importData(importData);
 
@@ -274,7 +347,8 @@ void _forceClipboardImport(BuildContext context, ProviderContainer container) as
     if (appState.urls.any((url) => url.url == text)) return;
 
     // Create a new URL item
-    final categoryId = appState.selectedCategoryId ?? (appState.categories.isNotEmpty ? appState.categories.first.id : '');
+    final categoryId = appState.selectedCategoryId ??
+        (appState.categories.isNotEmpty ? appState.categories.first.id : '');
 
     // Create a basic URL item
     final newUrl = UrlItem(
@@ -284,7 +358,9 @@ void _forceClipboardImport(BuildContext context, ProviderContainer container) as
     );
 
     // Add the URL and fetch metadata
-    await container.read(appNotifier.notifier).addUrl(newUrl, fetchMetadata: true);
+    await container
+        .read(appNotifier.notifier)
+        .addUrl(newUrl, fetchMetadata: true);
 
     // Show notification
     LocalNotification(
@@ -346,38 +422,44 @@ class MainApp extends ConsumerWidget {
       );
     }
 
-    return MacosApp(
-      navigatorKey: DialogService.navigatorKey,
-      title: 'Later',
-      theme: lightTheme,
-      darkTheme: darkTheme,
-      color: Colors.transparent,
-      themeMode: settings.themeMode,
-      home: Builder(
-        builder: (context) {
-          // Create shortcuts map
-          final shortcuts = KeyboardShortcuts.getApplicationShortcuts(context, ref);
-
-          return Shortcuts(
-            shortcuts: Map.fromEntries(
-              shortcuts.keys.map((key) => MapEntry(key, VoidCallbackIntent(shortcuts[key]!))),
-            ),
-            child: Actions(
-              actions: <Type, Action<Intent>>{
-                VoidCallbackIntent: VoidCallbackAction(),
-              },
-              child: Focus(
-                autofocus: true,
-                child: const MainView(),
-              ),
-            ),
-          );
+    return PlatformMenuBar(
+      menus: LaterPlatformMenu.build(context, ref).menus,
+      child: MacosApp(
+        routes: {
+          '/settings': (context) => const SettingsPage(),
         },
+        debugShowCheckedModeBanner: false,
+        navigatorKey: DialogService.navigatorKey,
+        title: 'Later',
+        theme: lightTheme,
+        darkTheme: darkTheme,
+        color: Colors.transparent,
+        themeMode: settings.themeMode,
+        home: Builder(
+          builder: (context) {
+            // Create shortcuts map
+            final shortcuts =
+                KeyboardShortcuts.getApplicationShortcuts(context, ref);
+
+            return Shortcuts(
+              shortcuts: Map.fromEntries(
+                shortcuts.keys.map((key) =>
+                    MapEntry(key, VoidCallbackIntent(shortcuts[key]!))),
+              ),
+              child: Actions(
+                actions: <Type, Action<Intent>>{
+                  VoidCallbackIntent: VoidCallbackAction(),
+                },
+                child: Focus(
+                  autofocus: true,
+                  child: const MainView(),
+                ),
+              ),
+            );
+          },
+        ),
+        // No need for debugShowCheckedModeBanner here
       ),
-      routes: {
-        '/settings': (context) => const SettingsPage(),
-      },
-      debugShowCheckedModeBanner: false,
     );
   }
 }

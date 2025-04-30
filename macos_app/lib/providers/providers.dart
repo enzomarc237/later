@@ -22,7 +22,7 @@ final dataFolderPathProvider = StateProvider<String>((ref) => '');
 // FileStorageService provider that uses the data folder path from the StateProvider
 final fileStorageServiceProvider = Provider<FileStorageService>((ref) {
   final dataFolderPath = ref.watch(dataFolderPathProvider);
-  return FileStorageService(basePath: dataFolderPath);
+  return FileStorageService(dataFolderPath);
 });
 
 // BackupService provider that uses the FileStorageService

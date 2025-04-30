@@ -42,6 +42,7 @@ A browser extension for Chrome that allows users to save tabs to the Later app.
 A browser extension for Firefox with functionality similar to the Chrome extension but adapted for Firefox's WebExtensions API.
 
 **Key Files:**
+
 - `firefox_extension/manifest.json` - Extension configuration
 - `firefox_extension/popup.html` and `popup.js` - UI and functionality for the popup
 - `firefox_extension/background.js` - Background script for handling keyboard shortcuts

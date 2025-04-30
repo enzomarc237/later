@@ -24,7 +24,9 @@ class BackupService {
 
   /// Gets the backup directory.
   Future<Directory> get _backupDirectory async {
-    final baseDir = _fileStorage.basePath.isEmpty ? (await getApplicationDocumentsDirectory()).path : _fileStorage.basePath;
+    final baseDir = _fileStorage.dataFolderPath.isEmpty
+        ? (await getApplicationDocumentsDirectory()).path
+        : _fileStorage.dataFolderPath;
 
     final backupDir = Directory('$baseDir/backups');
     if (!await backupDir.exists()) {
@@ -47,7 +49,6 @@ class BackupService {
       final backupFileName = backupName ?? 'backup_$formattedDate.json';
 
       final backupDir = await _backupDirectory;
-      final backupFile = File('${backupDir.path}/$backupFileName');
 
       // Create backup data
       final backupData = {
@@ -55,14 +56,26 @@ class BackupService {
         'categories': categories.map((c) => c.toJson()).toList(),
         'urls': urls.map((u) => u.toJson()).toList(),
         'settings': settings.toJson(),
+        'version': 1, // Add version for future compatibility
       };
 
-      // Write backup to file
-      await backupFile.writeAsString(jsonEncode(backupData));
+      // Write backup to file using atomic write
+      final backupFile = File('${backupDir.path}/$backupFileName');
+      final tempFile = File('${backupDir.path}/$backupFileName.tmp');
+
+      // Write to temp file first
+      await tempFile.writeAsString(jsonEncode(backupData), flush: true);
+
+      // If successful, rename to actual file
+      if (await backupFile.exists()) {
+        await backupFile.delete();
+      }
+      await tempFile.rename(backupFile.path);
 
       // Clean up old backups if needed
       await _cleanupOldBackups();
 
+      debugPrint('Successfully created backup: $backupFileName');
       return backupFileName;
     } catch (e) {
       debugPrint('Error creating backup: $e');
@@ -121,23 +134,78 @@ class BackupService {
         return false;
       }
 
+      // Create backup of current data before restoring
+      try {
+        // Backup current categories
+        if (await _fileStorage.fileExists('categories.json')) {
+          await _fileStorage.backupFile('categories.json');
+        }
+
+        // Backup current URLs
+        if (await _fileStorage.fileExists('urls.json')) {
+          await _fileStorage.backupFile('urls.json');
+        }
+
+        // Backup current settings
+        if (await _fileStorage.fileExists('settings.json')) {
+          await _fileStorage.backupFile('settings.json');
+        }
+      } catch (e) {
+        debugPrint('Warning: Failed to backup current data before restore: $e');
+        // Continue with restore even if backup fails
+      }
+
       final content = await backupFile.readAsString();
       final data = jsonDecode(content) as Map<String, dynamic>;
 
-      final categories = (data['categories'] as List).map((json) => Category.fromJson(json as Map<String, dynamic>)).toList();
+      // Validate backup data
+      if (!data.containsKey('categories') ||
+          !data.containsKey('urls') ||
+          !data.containsKey('settings')) {
+        throw FormatException('Invalid backup format: missing required fields');
+      }
 
-      final urls = (data['urls'] as List).map((json) => UrlItem.fromJson(json as Map<String, dynamic>)).toList();
-
-      final settings = Settings.fromJson(data['settings'] as Map<String, dynamic>);
+      // Parse data to validate it
+      final categories = (data['categories'] as List)
+          .map((json) => Category.fromJson(json as Map<String, dynamic>))
+          .toList();
+      final urls = (data['urls'] as List)
+          .map((json) => UrlItem.fromJson(json as Map<String, dynamic>))
+          .toList();
+      // Validate settings
+      Settings.fromJson(data['settings'] as Map<String, dynamic>);
 
       // Write restored data to storage
-      await _fileStorage.writeJsonListFile('categories.json', data['categories'] as List);
-      await _fileStorage.writeJsonListFile('urls.json', data['urls'] as List);
-      await _fileStorage.writeJsonFile('settings.json', data['settings'] as Map<String, dynamic>);
+      await _fileStorage.writeJsonListFile('categories.json',
+          (data['categories'] as List).cast<Map<String, dynamic>>());
+      await _fileStorage.writeJsonListFile(
+          'urls.json', (data['urls'] as List).cast<Map<String, dynamic>>());
+      await _fileStorage.writeJsonFile(
+          'settings.json', data['settings'] as Map<String, dynamic>);
 
+      debugPrint('Successfully restored backup: $backupFileName');
+      debugPrint(
+          'Restored ${categories.length} categories and ${urls.length} URLs');
       return true;
     } catch (e) {
       debugPrint('Error restoring backup: $e');
+
+      // Try to recover from backup if restore failed
+      try {
+        if (await _fileStorage.fileExists('categories.json.bak')) {
+          await _fileStorage.restoreFromBackup('categories.json');
+        }
+        if (await _fileStorage.fileExists('urls.json.bak')) {
+          await _fileStorage.restoreFromBackup('urls.json');
+        }
+        if (await _fileStorage.fileExists('settings.json.bak')) {
+          await _fileStorage.restoreFromBackup('settings.json');
+        }
+        debugPrint('Recovered from backup after failed restore');
+      } catch (recoveryError) {
+        debugPrint('Failed to recover from backup: $recoveryError');
+      }
+
       return false;
     }
   }

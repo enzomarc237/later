@@ -1,6 +1,7 @@
 {
   "editor.tabCompletion": "on",
-  "MutableAI.upsell": true,
+  "MutableAI.upsell": false,
   "CodeGPT.apiKey": "Ollama",
-  "codium.codeCompletion.enable": true
+  "codium.codeCompletion.enable": true,
+  "editor.acceptSuggestionOnEnter": "on"
 }

@@ -1,21 +1,19 @@
-import 'dart:convert';
-import 'dart:io';
 import 'package:intl/intl.dart';
 
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:local_notifier/local_notifier.dart';
 import 'package:macos_ui/macos_ui.dart';
-import 'package:meta/meta.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../utils/url_validator.dart';
 import '../models/models.dart';
 import '../providers/providers.dart';
 import '../utils/import_export_manager.dart';
+import '../widgets/url_context_menu.dart';
 import 'import_dialog.dart';
+import 'import_urls_dialog.dart';
 import 'export_dialog.dart';
 
 // App lifecycle observer to monitor app state changes
@@ -134,7 +132,8 @@ class _HomePageState extends ConsumerState<HomePage> {
     try {
       // Create a new URL item
       final appState = ref.read(appNotifier);
-      final categoryId = appState.selectedCategoryId ?? (appState.categories.isNotEmpty ? appState.categories.first.id : '');
+      final categoryId = appState.selectedCategoryId ??
+          (appState.categories.isNotEmpty ? appState.categories.first.id : '');
 
       // Create a basic URL item
       final newUrl = UrlItem(
@@ -154,7 +153,8 @@ class _HomePageState extends ConsumerState<HomePage> {
     } catch (e) {
       debugPrint('Error importing URL from clipboard: $e');
       if (mounted) {
-        _showErrorDialog(context, 'Import Failed', 'Failed to import URL from clipboard: $e');
+        _showErrorDialog(context, 'Import Failed',
+            'Failed to import URL from clipboard: $e');
       }
     }
   }
@@ -176,14 +176,27 @@ class _HomePageState extends ConsumerState<HomePage> {
 
     // Get URLs for the selected category using the getter from AppState
     // This ensures we're using the same logic as in the AppState class
-    final urls = selectedCategoryId == null ? appState.urls : appState.selectedCategoryUrls;
+    final urls = selectedCategoryId == null
+        ? appState.urls
+        : appState.selectedCategoryUrls;
 
     // Debug print to verify we're getting the correct URLs
-    debugPrint('Selected category: ${selectedCategoryId == null ? "All URLs" : selectedCategory.name}');
-    debugPrint('Total URLs: ${appState.urls.length}, Filtered URLs: ${urls.length}');
+    debugPrint(
+        'Selected category: ${selectedCategoryId == null ? "All URLs" : selectedCategory.name}');
+    debugPrint(
+        'Total URLs: ${appState.urls.length}, Filtered URLs: ${urls.length}');
 
     // Filter URLs by search query
-    final filteredUrls = urls.where((url) => _searchQuery.isEmpty || url.title.toLowerCase().contains(_searchQuery.toLowerCase()) || url.url.toLowerCase().contains(_searchQuery.toLowerCase()) || (url.description?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false)).toList();
+    final filteredUrls = urls
+        .where((url) =>
+            _searchQuery.isEmpty ||
+            url.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+            url.url.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+            (url.description
+                    ?.toLowerCase()
+                    .contains(_searchQuery.toLowerCase()) ??
+                false))
+        .toList();
 
     return MacosScaffold(
       backgroundColor: theme.canvasColor,
@@ -192,15 +205,21 @@ class _HomePageState extends ConsumerState<HomePage> {
           icon: MacosIcon(
             CupertinoIcons.sidebar_left,
             size: 20,
-            color: theme.brightness == Brightness.dark ? Colors.white : Colors.black,
+            color: theme.brightness == Brightness.dark
+                ? Colors.white
+                : Colors.black,
           ),
           onPressed: () {
             MacosWindowScope.of(context).toggleSidebar();
           },
         ),
-        title: selectionMode ? Text('${appState.selectedUrlCount} selected') : Text(selectedCategory.name),
+        title: selectionMode
+            ? Text('${appState.selectedUrlCount} selected')
+            : Text(selectedCategory.name),
         titleWidth: 250,
-        actions: selectionMode ? _buildSelectionModeActions(context, appState) : _buildNormalModeActions(context, selectedCategoryId),
+        actions: selectionMode
+            ? _buildSelectionModeActions(context, appState)
+            : _buildNormalModeActions(context, selectedCategoryId),
       ),
       children: [
         ContentArea(
@@ -228,14 +247,16 @@ class _HomePageState extends ConsumerState<HomePage> {
                           controlSize: ControlSize.regular,
                           secondary: true,
                           onPressed: () {
-                            final appNotifierRef = ref.read(appNotifier.notifier);
+                            final appNotifierRef =
+                                ref.read(appNotifier.notifier);
                             if (appState.selectionMode) {
                               appNotifierRef.toggleSelectionMode();
                             } else {
                               appNotifierRef.toggleSelectionMode();
                             }
                           },
-                          child: Text(appState.selectionMode ? 'Cancel' : 'Select'),
+                          child: Text(
+                              appState.selectionMode ? 'Cancel' : 'Select'),
                         ),
                       ],
                     ],
@@ -250,18 +271,23 @@ class _HomePageState extends ConsumerState<HomePage> {
                               MacosIcon(
                                 CupertinoIcons.link,
                                 size: 48,
-                                color: theme.brightness == Brightness.dark ? MacosColors.systemGrayColor : MacosColors.systemGrayColor,
+                                color: theme.brightness == Brightness.dark
+                                    ? MacosColors.systemGrayColor
+                                    : MacosColors.systemGrayColor,
                               ),
                               const SizedBox(height: 16),
                               Text(
-                                selectedCategoryId == null ? 'No URLs added yet' : 'No URLs in this category',
+                                selectedCategoryId == null
+                                    ? 'No URLs added yet'
+                                    : 'No URLs in this category',
                                 style: theme.typography.headline,
                               ),
                               const SizedBox(height: 8),
                               PushButton(
                                 controlSize: ControlSize.regular,
                                 onPressed: () {
-                                  _showAddUrlDialog(context, selectedCategoryId);
+                                  _showAddUrlDialog(
+                                      context, selectedCategoryId);
                                 },
                                 child: const Text('Add URL'),
                               ),
@@ -292,7 +318,8 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   // Build actions for normal mode (no selection)
-  List<ToolbarItem> _buildNormalModeActions(BuildContext context, String? selectedCategoryId) {
+  List<ToolbarItem> _buildNormalModeActions(
+      BuildContext context, String? selectedCategoryId) {
     final appState = ref.read(appNotifier);
     final hasUrls = appState.visibleUrls.isNotEmpty;
     final theme = MacosTheme.of(context);
@@ -302,7 +329,8 @@ class _HomePageState extends ConsumerState<HomePage> {
         label: 'Add URL',
         icon: MacosIcon(
           CupertinoIcons.add_circled,
-          color: theme.brightness == Brightness.dark ? Colors.white : Colors.black,
+          color:
+              theme.brightness == Brightness.dark ? Colors.white : Colors.black,
         ),
         onPressed: () {
           _showAddUrlDialog(context, selectedCategoryId);
@@ -313,7 +341,8 @@ class _HomePageState extends ConsumerState<HomePage> {
         label: 'Validate URLs',
         icon: MacosIcon(
           CupertinoIcons.checkmark_shield,
-          color: theme.brightness == Brightness.dark ? Colors.white : Colors.black,
+          color:
+              theme.brightness == Brightness.dark ? Colors.white : Colors.black,
         ),
         onPressed: hasUrls
             ? () {
@@ -326,7 +355,8 @@ class _HomePageState extends ConsumerState<HomePage> {
         label: 'Export List',
         icon: MacosIcon(
           CupertinoIcons.arrow_up_doc,
-          color: theme.brightness == Brightness.dark ? Colors.white : Colors.black,
+          color:
+              theme.brightness == Brightness.dark ? Colors.white : Colors.black,
         ),
         onPressed: () {
           _exportUrls(context);
@@ -337,7 +367,8 @@ class _HomePageState extends ConsumerState<HomePage> {
         label: 'Import List',
         icon: MacosIcon(
           CupertinoIcons.arrow_down_doc,
-          color: theme.brightness == Brightness.dark ? Colors.white : Colors.black,
+          color:
+              theme.brightness == Brightness.dark ? Colors.white : Colors.black,
         ),
         onPressed: () {
           _importUrls(context);
@@ -348,7 +379,8 @@ class _HomePageState extends ConsumerState<HomePage> {
         label: 'Settings',
         icon: MacosIcon(
           CupertinoIcons.gear,
-          color: theme.brightness == Brightness.dark ? Colors.white : Colors.black,
+          color:
+              theme.brightness == Brightness.dark ? Colors.white : Colors.black,
         ),
         onPressed: () {
           // Navigate to settings page
@@ -362,7 +394,8 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   // Build actions for selection mode
-  List<ToolbarItem> _buildSelectionModeActions(BuildContext context, AppState appState) {
+  List<ToolbarItem> _buildSelectionModeActions(
+      BuildContext context, AppState appState) {
     final appNotifierRef = ref.read(appNotifier.notifier);
     final hasSelections = appState.selectedUrlCount > 0;
     final theme = MacosTheme.of(context);
@@ -372,7 +405,8 @@ class _HomePageState extends ConsumerState<HomePage> {
         label: 'Select All',
         icon: MacosIcon(
           CupertinoIcons.checkmark_circle,
-          color: theme.brightness == Brightness.dark ? Colors.white : Colors.black,
+          color:
+              theme.brightness == Brightness.dark ? Colors.white : Colors.black,
         ),
         onPressed: () {
           appNotifierRef.selectAllVisibleUrls();
@@ -380,10 +414,25 @@ class _HomePageState extends ConsumerState<HomePage> {
         showLabel: true,
       ),
       ToolBarIconButton(
+        label: 'Open',
+        icon: MacosIcon(
+          CupertinoIcons.globe,
+          color:
+              theme.brightness == Brightness.dark ? Colors.white : Colors.black,
+        ),
+        onPressed: hasSelections
+            ? () {
+                _showOpenSelectedUrlsDialog(context);
+              }
+            : null,
+        showLabel: true,
+      ),
+      ToolBarIconButton(
         label: 'Delete',
         icon: MacosIcon(
           CupertinoIcons.trash,
-          color: theme.brightness == Brightness.dark ? Colors.white : Colors.black,
+          color:
+              theme.brightness == Brightness.dark ? Colors.white : Colors.black,
         ),
         onPressed: hasSelections
             ? () {
@@ -396,7 +445,8 @@ class _HomePageState extends ConsumerState<HomePage> {
         label: 'Move',
         icon: MacosIcon(
           CupertinoIcons.folder,
-          color: theme.brightness == Brightness.dark ? Colors.white : Colors.black,
+          color:
+              theme.brightness == Brightness.dark ? Colors.white : Colors.black,
         ),
         onPressed: hasSelections
             ? () {
@@ -413,158 +463,234 @@ class _HomePageState extends ConsumerState<HomePage> {
     // This avoids potential confusion with two variables with the same name
     final theme = MacosTheme.of(context);
 
-    return MacosCard(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                if (appState.selectionMode) ...[
-                  MacosCheckbox(
-                    value: appState.isUrlSelected(url.id),
-                    onChanged: (value) {
-                      ref.read(appNotifier.notifier).toggleUrlSelection(url.id);
-                    },
-                  ),
-                  const SizedBox(width: 8),
-                ],
-                // Display favicon if available
-                if (url.metadata != null && url.metadata!['faviconUrl'] != null) ...[
-                  _buildFaviconImage(url.metadata!['faviconUrl'] as String?),
-                  const SizedBox(width: 8),
-                ],
-                Expanded(
-                  child: Text(
-                    url.title,
-                    style: theme.typography.title3,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                if (!appState.selectionMode)
-                  Row(
-                    children: [
-                      MacosIconButton(
-                        icon: MacosIcon(
-                          CupertinoIcons.pencil,
-                          color: theme.brightness == Brightness.dark ? Colors.white : Colors.black,
-                        ),
-                        onPressed: () {
-                          _showEditUrlDialog(context, url);
-                        },
-                      ),
-                      const SizedBox(width: 8),
-                      MacosIconButton(
-                        icon: MacosIcon(
-                          CupertinoIcons.trash,
-                          color: theme.brightness == Brightness.dark ? Colors.white : Colors.black,
-                        ),
-                        onPressed: () {
-                          _showDeleteUrlDialog(context, url);
-                        },
-                      ),
-                    ],
-                  ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Container(
-                  width: 12,
-                  height: 12,
-                  decoration: BoxDecoration(
-                    color: url.status.getColor(context),
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    url.url,
-                    style: theme.typography.body.copyWith(
-                      color: theme.primaryColor,
+    return GestureDetector(
+      onSecondaryTapUp: (details) =>
+          showUrlContextMenu(context, url, details.globalPosition, ref),
+      child: MacosCard(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  if (appState.selectionMode) ...[
+                    MacosCheckbox(
+                      value: appState.isUrlSelected(url.id),
+                      onChanged: (value) {
+                        ref
+                            .read(appNotifier.notifier)
+                            .toggleUrlSelection(url.id);
+                      },
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  // Display favicon if available
+                  if (url.metadata != null &&
+                      url.metadata!['faviconUrl'] != null) ...[
+                    _buildFaviconImage(url.metadata!['faviconUrl'] as String?),
+                    const SizedBox(width: 8),
+                  ],
+                  Expanded(
+                    child: Text(
+                      url.title,
+                      style: theme.typography.title3,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                ),
-                if (url.lastChecked != null) ...[
-                  const SizedBox(width: 8),
-                  Text(
-                    'Checked: ${_formatDate(url.lastChecked!)}',
-                    style: theme.typography.caption2.copyWith(
-                      color: theme.brightness == Brightness.dark ? MacosColors.systemGrayColor : MacosColors.systemGrayColor,
+                  if (!appState.selectionMode)
+                    Row(
+                      children: [
+                        MacosIconButton(
+                          icon: MacosIcon(
+                            CupertinoIcons.pencil,
+                            color: theme.brightness == Brightness.dark
+                                ? Colors.white
+                                : Colors.black,
+                          ),
+                          onPressed: () {
+                            _showEditUrlDialog(context, url);
+                          },
+                        ),
+                        const SizedBox(width: 8),
+                        MacosIconButton(
+                          icon: MacosIcon(
+                            CupertinoIcons.trash,
+                            color: theme.brightness == Brightness.dark
+                                ? Colors.white
+                                : Colors.black,
+                          ),
+                          onPressed: () {
+                            _showDeleteUrlDialog(context, url);
+                          },
+                        ),
+                      ],
                     ),
-                  ),
                 ],
-              ],
-            ),
-            if (url.description != null && url.description!.isNotEmpty) ...[
+              ),
               const SizedBox(height: 8),
-              Text(
-                url.description!,
-                style: theme.typography.body,
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
+              Row(
+                children: [
+                  Container(
+                    width: 12,
+                    height: 12,
+                    decoration: BoxDecoration(
+                      color: url.status.getColor(context),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      url.url,
+                      style: theme.typography.body.copyWith(
+                        color: theme.primaryColor,
+                      ),
+                    ),
+                  ),
+                  if (url.lastChecked != null) ...[
+                    const SizedBox(width: 8),
+                    Text(
+                      'Checked: ${_formatDate(url.lastChecked!)}',
+                      style: theme.typography.caption2.copyWith(
+                        color: theme.brightness == Brightness.dark
+                            ? MacosColors.systemGrayColor
+                            : MacosColors.systemGrayColor,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              if (url.description != null && url.description!.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(
+                  url.description!,
+                  style: theme.typography.body,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    "Category: ${appState.categories.firstWhere(
+                          (cat) => cat.id == url.categoryId,
+                          orElse: () =>
+                              Category(id: 'unknown', name: 'Unknown'),
+                        ).name}",
+                    style: theme.typography.caption1.copyWith(
+                      color: theme.brightness == Brightness.dark
+                          ? MacosColors.systemGrayColor
+                          : MacosColors.systemGrayColor,
+                    ),
+                  ),
+                  if (!appState.selectionMode)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        PushButton(
+                          controlSize: ControlSize.small,
+                          secondary: true,
+                          onPressed: () {
+                            _showUrlPreview(context, url);
+                          },
+                          child: const Text('Preview'),
+                        ),
+                        const SizedBox(width: 8),
+                        PushButton(
+                          controlSize: ControlSize.small,
+                          onPressed: () {
+                            showMenu(
+                              context: context,
+                              position: RelativeRect.fromLTRB(
+                                MediaQuery.of(context).size.width - 100,
+                                MediaQuery.of(context).size.height / 2,
+                                MediaQuery.of(context).size.width,
+                                MediaQuery.of(context).size.height / 2 + 1,
+                              ),
+                              items: [
+                                PopupMenuItem(
+                                  child: Row(
+                                    children: [
+                                      MacosIcon(
+                                        CupertinoIcons.globe,
+                                        size: 18,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      const Text('Open in Browser'),
+                                    ],
+                                  ),
+                                  onTap: () {
+                                    Future.delayed(Duration.zero, () {
+                                      _openUrlInBrowser(context, url.url);
+                                    });
+                                  },
+                                ),
+                                PopupMenuItem(
+                                  child: Row(
+                                    children: [
+                                      MacosIcon(
+                                        CupertinoIcons.doc_on_clipboard,
+                                        size: 18,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      const Text('Copy URL'),
+                                    ],
+                                  ),
+                                  onTap: () {
+                                    Future.delayed(Duration.zero, () {
+                                      _copyUrlToClipboard(context, url.url);
+                                    });
+                                  },
+                                ),
+                                PopupMenuItem(
+                                  child: Row(
+                                    children: [
+                                      MacosIcon(
+                                        CupertinoIcons.checkmark_shield,
+                                        size: 18,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      const Text('Validate URL'),
+                                    ],
+                                  ),
+                                  onTap: () {
+                                    Future.delayed(Duration.zero, () {
+                                      _validateUrl(context, url);
+                                    });
+                                  },
+                                ),
+                                PopupMenuItem(
+                                  child: Row(
+                                    children: [
+                                      MacosIcon(
+                                        CupertinoIcons.pencil,
+                                        size: 18,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      const Text('Edit URL'),
+                                    ],
+                                  ),
+                                  onTap: () {
+                                    Future.delayed(Duration.zero, () {
+                                      _showEditUrlDialog(context, url);
+                                    });
+                                  },
+                                ),
+                              ],
+                            );
+                          },
+                          child: const Text('Actions'),
+                        ),
+                      ],
+                    ),
+                ],
               ),
             ],
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  "Category: ${appState.categories.firstWhere(
-                        (cat) => cat.id == url.categoryId,
-                        orElse: () => Category(id: 'unknown', name: 'Unknown'),
-                      ).name}",
-                  style: theme.typography.caption1.copyWith(
-                    color: theme.brightness == Brightness.dark ? MacosColors.systemGrayColor : MacosColors.systemGrayColor,
-                  ),
-                ),
-                if (!appState.selectionMode)
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      PushButton(
-                        controlSize: ControlSize.small,
-                        secondary: true,
-                        onPressed: () {
-                          _copyUrlToClipboard(context, url.url);
-                        },
-                        child: const Text('Copy'),
-                      ),
-                      const SizedBox(width: 8),
-                      PushButton(
-                        controlSize: ControlSize.small,
-                        secondary: true,
-                        onPressed: () {
-                          _showUrlPreview(context, url);
-                        },
-                        child: const Text('Preview'),
-                      ),
-                      const SizedBox(width: 8),
-                      PushButton(
-                        controlSize: ControlSize.small,
-                        secondary: true,
-                        onPressed: () {
-                          _validateUrl(context, url);
-                        },
-                        child: const Text('Validate'),
-                      ),
-                      const SizedBox(width: 8),
-                      PushButton(
-                        controlSize: ControlSize.small,
-                        onPressed: () {
-                          _openUrlInBrowser(context, url.url);
-                        },
-                        child: const Text('Open'),
-                      ),
-                    ],
-                  ),
-              ],
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -585,7 +711,8 @@ class _HomePageState extends ConsumerState<HomePage> {
           color: MacosColors.systemRedColor,
         ),
         title: const Text('Delete Selected URLs'),
-        message: Text('Are you sure you want to delete $count selected URLs? This action cannot be undone.'),
+        message: Text(
+            'Are you sure you want to delete $count selected URLs? This action cannot be undone.'),
         primaryButton: PushButton(
           controlSize: ControlSize.large,
           onPressed: () {
@@ -613,6 +740,48 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
+  // Show dialog to open selected URLs
+  void _showOpenSelectedUrlsDialog(BuildContext context) {
+    final appState = ref.read(appNotifier);
+    final count = appState.selectedUrlCount;
+
+    // Show warning if too many URLs are selected
+    final warningMessage = count > 10
+        ? '\nWarning: Opening many URLs at once may cause your browser to slow down.'
+        : '';
+
+    showMacosAlertDialog(
+      context: context,
+      builder: (_) => MacosAlertDialog(
+        appIcon: const MacosIcon(
+          CupertinoIcons.globe,
+          size: 56,
+          color: MacosColors.systemBlueColor,
+        ),
+        title: Text('Open $count URLs'),
+        message: Text(
+            'Are you sure you want to open $count URLs in your browser?$warningMessage'),
+        primaryButton: PushButton(
+          controlSize: ControlSize.large,
+          onPressed: () {
+            // Open the URLs
+            ref.read(appNotifier.notifier).openSelectedUrls();
+            Navigator.of(context).pop();
+          },
+          child: const Text('Open'),
+        ),
+        secondaryButton: PushButton(
+          controlSize: ControlSize.large,
+          secondary: true,
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          child: const Text('Cancel'),
+        ),
+      ),
+    );
+  }
+
   // Show dialog to move selected URLs to a category
   void _showMoveSelectedUrlsDialog(BuildContext context) {
     final appState = ref.read(appNotifier);
@@ -621,7 +790,8 @@ class _HomePageState extends ConsumerState<HomePage> {
     final theme = MacosTheme.of(context);
 
     // Default to first category or empty string if no categories
-    String selectedCategoryId = categories.isNotEmpty ? categories.first.id : '';
+    String selectedCategoryId =
+        categories.isNotEmpty ? categories.first.id : '';
 
     showMacosAlertDialog(
       context: context,
@@ -671,13 +841,16 @@ class _HomePageState extends ConsumerState<HomePage> {
             onPressed: categories.isEmpty
                 ? null
                 : () {
-                    ref.read(appNotifier.notifier).moveSelectedUrlsToCategory(selectedCategoryId);
+                    ref
+                        .read(appNotifier.notifier)
+                        .moveSelectedUrlsToCategory(selectedCategoryId);
 
                     // Show notification
                     final categoryName = categories
                         .firstWhere(
                           (cat) => cat.id == selectedCategoryId,
-                          orElse: () => Category(id: 'unknown', name: 'Unknown'),
+                          orElse: () =>
+                              Category(id: 'unknown', name: 'Unknown'),
                         )
                         .name;
 
@@ -803,7 +976,8 @@ class _HomePageState extends ConsumerState<HomePage> {
       _showSuccessDialog(context, 'URL Copied', 'URL copied to clipboard.');
     } catch (e) {
       debugPrint('Error copying URL to clipboard: $e');
-      _showErrorDialog(context, 'Copy Failed', 'Failed to copy URL to clipboard.');
+      _showErrorDialog(
+          context, 'Copy Failed', 'Failed to copy URL to clipboard.');
     }
   }
 
@@ -813,11 +987,13 @@ class _HomePageState extends ConsumerState<HomePage> {
       if (await canLaunchUrl(url)) {
         await launchUrl(url);
       } else {
-        _showErrorDialog(context, 'Open Failed', 'Could not open URL: $urlString');
+        _showErrorDialog(
+            context, 'Open Failed', 'Could not open URL: $urlString');
       }
     } catch (e) {
       debugPrint('Error opening URL: $e');
-      _showErrorDialog(context, 'Open Failed', 'Failed to open URL: $urlString');
+      _showErrorDialog(
+          context, 'Open Failed', 'Failed to open URL: $urlString');
     }
   }
 
@@ -859,7 +1035,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                   controlSize: ControlSize.small,
                   secondary: true,
                   onPressed: () {
-                    _fetchMetadataForDialog(context, urlController, titleController, descriptionController);
+                    _fetchMetadataForDialog(context, urlController,
+                        titleController, descriptionController);
                   },
                   child: const Text('Fetch Metadata'),
                 ),
@@ -876,20 +1053,27 @@ class _HomePageState extends ConsumerState<HomePage> {
         primaryButton: PushButton(
           controlSize: ControlSize.large,
           onPressed: () {
-            if (titleController.text.trim().isNotEmpty && urlController.text.trim().isNotEmpty) {
+            if (titleController.text.trim().isNotEmpty &&
+                urlController.text.trim().isNotEmpty) {
               final appState = ref.read(appNotifier);
               final newUrl = UrlItem(
                 url: urlController.text.trim(),
                 title: titleController.text.trim(),
-                description: descriptionController.text.trim().isNotEmpty ? descriptionController.text.trim() : null,
-                categoryId: categoryId ?? (appState.categories.isNotEmpty ? appState.categories.first.id : ''),
+                description: descriptionController.text.trim().isNotEmpty
+                    ? descriptionController.text.trim()
+                    : null,
+                categoryId: categoryId ??
+                    (appState.categories.isNotEmpty
+                        ? appState.categories.first.id
+                        : ''),
               );
               ref.read(appNotifier.notifier).addUrl(newUrl);
 
               // Show notification
               LocalNotification(
                 title: 'URL Added',
-                body: 'Added URL: ${newUrl.title.length > 30 ? newUrl.title.substring(0, 27) + '...' : newUrl.title}',
+                body:
+                    'Added URL: ${newUrl.title.length > 30 ? newUrl.title.substring(0, 27) + '...' : newUrl.title}',
               ).show();
 
               Navigator.of(context).pop();
@@ -912,7 +1096,8 @@ class _HomePageState extends ConsumerState<HomePage> {
   void _showEditUrlDialog(BuildContext context, UrlItem url) {
     final titleController = TextEditingController(text: url.title);
     final urlController = TextEditingController(text: url.url);
-    final descriptionController = TextEditingController(text: url.description ?? '');
+    final descriptionController =
+        TextEditingController(text: url.description ?? '');
     final theme = MacosTheme.of(context);
 
     // Get all categories from app state
@@ -955,7 +1140,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                     controlSize: ControlSize.small,
                     secondary: true,
                     onPressed: () {
-                      _fetchMetadataForDialog(context, urlController, titleController, descriptionController);
+                      _fetchMetadataForDialog(context, urlController,
+                          titleController, descriptionController);
                     },
                     child: const Text('Fetch Metadata'),
                   ),
@@ -1002,11 +1188,14 @@ class _HomePageState extends ConsumerState<HomePage> {
           primaryButton: PushButton(
             controlSize: ControlSize.large,
             onPressed: () {
-              if (titleController.text.trim().isNotEmpty && urlController.text.trim().isNotEmpty) {
+              if (titleController.text.trim().isNotEmpty &&
+                  urlController.text.trim().isNotEmpty) {
                 final updatedUrl = url.copyWith(
                   url: urlController.text.trim(),
                   title: titleController.text.trim(),
-                  description: descriptionController.text.trim().isNotEmpty ? descriptionController.text.trim() : null,
+                  description: descriptionController.text.trim().isNotEmpty
+                      ? descriptionController.text.trim()
+                      : null,
                   categoryId: selectedCategoryId,
                 );
                 ref.read(appNotifier.notifier).updateUrl(updatedUrl);
@@ -1014,7 +1203,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                 // Show notification
                 LocalNotification(
                   title: 'URL Updated',
-                  body: 'Updated URL: ${updatedUrl.title.length > 30 ? updatedUrl.title.substring(0, 27) + '...' : updatedUrl.title}',
+                  body:
+                      'Updated URL: ${updatedUrl.title.length > 30 ? updatedUrl.title.substring(0, 27) + '...' : updatedUrl.title}',
                 ).show();
 
                 Navigator.of(context).pop();
@@ -1056,7 +1246,8 @@ class _HomePageState extends ConsumerState<HomePage> {
             // Show notification
             LocalNotification(
               title: 'URL Deleted',
-              body: 'Deleted URL: ${url.title.length > 30 ? url.title.substring(0, 27) + '...' : url.title}',
+              body:
+                  'Deleted URL: ${url.title.length > 30 ? url.title.substring(0, 27) + '...' : url.title}',
             ).show();
 
             Navigator.of(context).pop();
@@ -1086,12 +1277,14 @@ class _HomePageState extends ConsumerState<HomePage> {
 
       // Use ImportExportManager to handle the export
       final importExportManager = ImportExportManager();
-      await importExportManager.exportBookmarks(context, exportData, exportConfig);
+      await importExportManager.exportBookmarks(
+          context, exportData, exportConfig);
 
       // Show notification
       LocalNotification(
         title: 'Export Successful',
-        body: 'Exported ${exportData.urls.length} URLs to ${exportConfig.format.displayName} file',
+        body:
+            'Exported ${exportData.urls.length} URLs to ${exportConfig.format.displayName} file',
       ).show();
     } catch (e) {
       debugPrint('Error exporting URLs: $e');
@@ -1101,10 +1294,13 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   void _importUrls(BuildContext context) async {
     try {
-      // Use ImportExportManager to handle the import
-      final importExportManager = ImportExportManager();
-      final importedUrls = await importExportManager.importBookmarks(context);
+      // Show the new import dialog
+      final importedUrls = await showMacosAlertDialog<List<UrlItem>>(
+        context: context,
+        builder: (_) => const ImportDialog(),
+      );
 
+      // If user canceled or no URLs were imported, do nothing
       if (importedUrls == null || importedUrls.isEmpty) return;
 
       // Show import dialog to let user select URLs and category
@@ -1232,7 +1428,9 @@ class _HomePageState extends ConsumerState<HomePage> {
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
               value: progress.percentage / 100,
-              backgroundColor: theme.brightness == Brightness.dark ? MacosColors.systemGrayColor.withOpacity(0.3) : MacosColors.systemGrayColor.withOpacity(0.1),
+              backgroundColor: theme.brightness == Brightness.dark
+                  ? MacosColors.systemGrayColor.withOpacity(0.3)
+                  : MacosColors.systemGrayColor.withOpacity(0.1),
               valueColor: AlwaysStoppedAnimation<Color>(theme.primaryColor),
               minHeight: 4,
             ),
@@ -1259,7 +1457,9 @@ class _HomePageState extends ConsumerState<HomePage> {
       return MacosIcon(
         CupertinoIcons.globe,
         size: 16,
-        color: theme.brightness == Brightness.dark ? MacosColors.systemGrayColor : MacosColors.systemGrayColor,
+        color: theme.brightness == Brightness.dark
+            ? MacosColors.systemGrayColor
+            : MacosColors.systemGrayColor,
       );
     }
 
@@ -1275,7 +1475,9 @@ class _HomePageState extends ConsumerState<HomePage> {
           return MacosIcon(
             CupertinoIcons.globe,
             size: 16,
-            color: theme.brightness == Brightness.dark ? MacosColors.systemGrayColor : MacosColors.systemGrayColor,
+            color: theme.brightness == Brightness.dark
+                ? MacosColors.systemGrayColor
+                : MacosColors.systemGrayColor,
           );
         },
         loadingBuilder: (context, child, loadingProgress) {
@@ -1320,7 +1522,8 @@ class _HomePageState extends ConsumerState<HomePage> {
     final theme = MacosTheme.of(context);
 
     if (urlString.isEmpty) {
-      _showErrorDialog(context, 'URL Required', 'Please enter a URL to fetch metadata.');
+      _showErrorDialog(
+          context, 'URL Required', 'Please enter a URL to fetch metadata.');
       return;
     }
 
@@ -1363,7 +1566,8 @@ class _HomePageState extends ConsumerState<HomePage> {
 
     try {
       // Fetch metadata
-      final metadata = await ref.read(metadataServiceProvider).fetchMetadata(urlString);
+      final metadata =
+          await ref.read(metadataServiceProvider).fetchMetadata(urlString);
 
       // Close the loading dialog
       if (context.mounted) {
@@ -1383,10 +1587,12 @@ class _HomePageState extends ConsumerState<HomePage> {
         }
 
         // Show success message
-        _showSuccessDialog(context, 'Metadata Fetched', 'Successfully fetched metadata for the URL.');
+        _showSuccessDialog(context, 'Metadata Fetched',
+            'Successfully fetched metadata for the URL.');
       } else {
         // Show error message
-        _showErrorDialog(context, 'Metadata Error', 'Error fetching metadata: ${metadata.error}');
+        _showErrorDialog(context, 'Metadata Error',
+            'Error fetching metadata: ${metadata.error}');
       }
     } catch (e) {
       // Close the loading dialog
@@ -1396,7 +1602,8 @@ class _HomePageState extends ConsumerState<HomePage> {
 
       if (context.mounted) {
         // Show error message
-        _showErrorDialog(context, 'Metadata Error', 'Error fetching metadata: $e');
+        _showErrorDialog(
+            context, 'Metadata Error', 'Error fetching metadata: $e');
       }
     }
   }
@@ -1541,7 +1748,9 @@ class MacosCard extends StatelessWidget {
           ),
         ],
         border: Border.all(
-          color: theme.brightness == Brightness.dark ? Colors.grey.shade800 : Colors.grey.shade300,
+          color: theme.brightness == Brightness.dark
+              ? Colors.grey.shade800
+              : Colors.grey.shade300,
         ),
       ),
       child: child,

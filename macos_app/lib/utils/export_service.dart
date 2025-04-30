@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:csv/csv.dart';
+import 'package:xml/xml.dart';
 import '../models/export_data.dart';
 import '../models/category.dart';
 import '../models/url_item.dart';
@@ -9,15 +10,16 @@ class ExportService {
   // Convert ExportData to CSV format
   String toCSV(ExportData data) {
     final List<List<dynamic>> rows = [];
-    
+
     // Add header
-    rows.add(['URL', 'Title', 'Category', 'Created Date', 'Description', 'Status']);
-    
+    rows.add(
+        ['URL', 'Title', 'Category', 'Created Date', 'Description', 'Status']);
+
     // Add data rows
     for (final url in data.urls) {
-      final category = data.categories
-          .firstWhere((c) => c.id == url.categoryId, orElse: () => Category(id: '', name: 'Uncategorized'));
-      
+      final category = data.categories.firstWhere((c) => c.id == url.categoryId,
+          orElse: () => Category(id: '', name: 'Uncategorized'));
+
       rows.add([
         url.url,
         url.title,
@@ -27,7 +29,7 @@ class ExportService {
         url.status.name,
       ]);
     }
-    
+
     return const ListToCsvConverter().convert(rows);
   }
 
@@ -35,16 +37,17 @@ class ExportService {
   ExportData fromCSV(String csvContent) {
     final rows = const CsvToListConverter().convert(csvContent);
     if (rows.isEmpty) throw FormatException('CSV file is empty');
-    
+
     // Skip header row
     final dataRows = rows.skip(1).toList();
-    
+
     // Extract unique categories
     final categoryNames = dataRows.map((row) => row[2].toString()).toSet();
-    final categories = categoryNames.map((name) => 
-      Category(id: name.toLowerCase().replaceAll(' ', '_'), name: name)
-    ).toList();
-    
+    final categories = categoryNames
+        .map((name) =>
+            Category(id: name.toLowerCase().replaceAll(' ', '_'), name: name))
+        .toList();
+
     // Convert rows to URLs
     final urls = dataRows.map((row) {
       final categoryName = row[2].toString();
@@ -52,7 +55,7 @@ class ExportService {
         (c) => c.name == categoryName,
         orElse: () => categories.first,
       );
-      
+
       return UrlItem(
         url: row[0].toString(),
         title: row[1].toString(),
@@ -65,7 +68,7 @@ class ExportService {
         ),
       );
     }).toList();
-    
+
     return ExportData(
       categories: categories,
       urls: urls,
@@ -159,41 +162,46 @@ class ExportService {
     // This is a basic implementation that could be enhanced with proper HTML parsing
     final categoryRegex = RegExp(r'<h2>(.*?)</h2>');
     final urlRegex = RegExp(r'<a href="(.*?)".*?>(.*?)</a>');
-    final descriptionRegex = RegExp(r'Description: (.*?)(?:<br>|</div>)', multiLine: true);
+    final descriptionRegex =
+        RegExp(r'Description: (.*?)(?:<br>|</div>)', multiLine: true);
     final statusRegex = RegExp(r'class="url-status [^"]*">(.*?)</span>');
-    
+
     final categories = <Category>[];
     final urls = <UrlItem>[];
-    
+
     // Extract categories and URLs
     final categoryMatches = categoryRegex.allMatches(htmlContent);
     for (final categoryMatch in categoryMatches) {
       final categoryName = _unescapeHtml(categoryMatch.group(1) ?? '');
       final categoryId = categoryName.toLowerCase().replaceAll(' ', '_');
       categories.add(Category(id: categoryId, name: categoryName));
-      
+
       // Find URLs for this category
       final categoryStart = categoryMatch.end;
       final categoryEnd = htmlContent.indexOf('</div>', categoryStart);
       final categoryContent = htmlContent.substring(categoryStart, categoryEnd);
-      
+
       final urlMatches = urlRegex.allMatches(categoryContent);
       for (final urlMatch in urlMatches) {
         final url = _unescapeHtml(urlMatch.group(1) ?? '');
         final title = _unescapeHtml(urlMatch.group(2) ?? '');
-        
+
         // Try to find description for this URL
-        final descriptionMatch = descriptionRegex.firstMatch(categoryContent.substring(urlMatch.end));
-        final description = descriptionMatch != null ? _unescapeHtml(descriptionMatch.group(1) ?? '') : null;
+        final descriptionMatch = descriptionRegex
+            .firstMatch(categoryContent.substring(urlMatch.end));
+        final description = descriptionMatch != null
+            ? _unescapeHtml(descriptionMatch.group(1) ?? '')
+            : null;
 
         // Try to find status for this URL
-        final statusMatch = statusRegex.firstMatch(categoryContent.substring(urlMatch.end));
+        final statusMatch =
+            statusRegex.firstMatch(categoryContent.substring(urlMatch.end));
         final statusName = statusMatch?.group(1) ?? 'unknown';
         final status = UrlStatus.values.firstWhere(
           (s) => s.name == statusName,
           orElse: () => UrlStatus.unknown,
         );
-        
+
         urls.add(UrlItem(
           url: url,
           title: title,
@@ -203,12 +211,175 @@ class ExportService {
         ));
       }
     }
-    
+
     return ExportData(
       categories: categories,
       urls: urls,
       version: '1.0.0',
     );
+  }
+
+  // Convert ExportData to XML format
+  String toXML(ExportData data) {
+    final builder = XmlBuilder();
+
+    builder.processing('xml', 'version="1.0" encoding="UTF-8"');
+    builder.element('bookmarks', nest: () {
+      builder.attribute('version', data.version);
+      builder.attribute('exportedAt', data.exportedAt.toIso8601String());
+
+      // Add categories
+      builder.element('categories', nest: () {
+        for (final category in data.categories) {
+          builder.element('category', nest: () {
+            builder.attribute('id', category.id);
+            builder.attribute(
+                'createdAt', category.createdAt.toIso8601String());
+            builder.attribute(
+                'updatedAt', category.updatedAt.toIso8601String());
+            builder.element('name', nest: category.name);
+            if (category.iconName != null) {
+              builder.element('iconName', nest: category.iconName);
+            }
+          });
+        }
+      });
+
+      // Add URLs
+      builder.element('urls', nest: () {
+        for (final url in data.urls) {
+          builder.element('url', nest: () {
+            builder.attribute('id', url.id);
+            builder.attribute('categoryId', url.categoryId);
+            builder.attribute('createdAt', url.createdAt.toIso8601String());
+            builder.attribute('updatedAt', url.updatedAt.toIso8601String());
+            builder.attribute('status', url.status.name);
+
+            builder.element('href', nest: url.url);
+            builder.element('title', nest: url.title);
+
+            if (url.description != null) {
+              builder.element('description', nest: url.description);
+            }
+
+            if (url.metadata != null && url.metadata!.isNotEmpty) {
+              builder.element('metadata', nest: () {
+                for (final entry in url.metadata!.entries) {
+                  builder.element('item', nest: () {
+                    builder.attribute('key', entry.key);
+                    builder.text(entry.value.toString());
+                  });
+                }
+              });
+            }
+          });
+        }
+      });
+    });
+
+    return builder.buildDocument().toXmlString(pretty: true, indent: '  ');
+  }
+
+  // Parse XML back to ExportData
+  ExportData fromXML(String xmlContent) {
+    try {
+      final document = XmlDocument.parse(xmlContent);
+      final bookmarksElement = document.rootElement;
+
+      // Get version and exportedAt
+      final version = bookmarksElement.getAttribute('version') ?? '1.0.0';
+      final exportedAtStr = bookmarksElement.getAttribute('exportedAt');
+      final exportedAt = exportedAtStr != null
+          ? DateTime.parse(exportedAtStr)
+          : DateTime.now();
+
+      // Parse categories
+      final categories = <Category>[];
+      final categoriesElement = bookmarksElement.getElement('categories');
+      if (categoriesElement != null) {
+        for (final categoryElement
+            in categoriesElement.findElements('category')) {
+          final id = categoryElement.getAttribute('id') ?? '';
+          final createdAtStr = categoryElement.getAttribute('createdAt');
+          final updatedAtStr = categoryElement.getAttribute('updatedAt');
+          final nameElement = categoryElement.getElement('name');
+          final iconNameElement = categoryElement.getElement('iconName');
+
+          if (nameElement != null) {
+            categories.add(Category(
+              id: id,
+              name: nameElement.innerText,
+              iconName: iconNameElement?.innerText,
+              createdAt:
+                  createdAtStr != null ? DateTime.parse(createdAtStr) : null,
+              updatedAt:
+                  updatedAtStr != null ? DateTime.parse(updatedAtStr) : null,
+            ));
+          }
+        }
+      }
+
+      // Parse URLs
+      final urls = <UrlItem>[];
+      final urlsElement = bookmarksElement.getElement('urls');
+      if (urlsElement != null) {
+        for (final urlElement in urlsElement.findElements('url')) {
+          final id = urlElement.getAttribute('id') ?? '';
+          final categoryId = urlElement.getAttribute('categoryId') ?? '';
+          final createdAtStr = urlElement.getAttribute('createdAt');
+          final updatedAtStr = urlElement.getAttribute('updatedAt');
+          final statusStr = urlElement.getAttribute('status') ?? 'unknown';
+
+          final hrefElement = urlElement.getElement('href');
+          final titleElement = urlElement.getElement('title');
+          final descriptionElement = urlElement.getElement('description');
+          final metadataElement = urlElement.getElement('metadata');
+
+          if (hrefElement != null && titleElement != null) {
+            // Parse metadata if available
+            Map<String, dynamic>? metadata;
+            if (metadataElement != null) {
+              metadata = {};
+              for (final item in metadataElement.findElements('item')) {
+                final key = item.getAttribute('key');
+                if (key != null) {
+                  metadata[key] = item.innerText;
+                }
+              }
+            }
+
+            // Parse status
+            final status = UrlStatus.values.firstWhere(
+              (s) => s.name == statusStr,
+              orElse: () => UrlStatus.unknown,
+            );
+
+            urls.add(UrlItem(
+              id: id,
+              url: hrefElement.innerText,
+              title: titleElement.innerText,
+              description: descriptionElement?.innerText,
+              categoryId: categoryId,
+              metadata: metadata,
+              status: status,
+              createdAt:
+                  createdAtStr != null ? DateTime.parse(createdAtStr) : null,
+              updatedAt:
+                  updatedAtStr != null ? DateTime.parse(updatedAtStr) : null,
+            ));
+          }
+        }
+      }
+
+      return ExportData(
+        categories: categories,
+        urls: urls,
+        version: version,
+        exportedAt: exportedAt,
+      );
+    } catch (e) {
+      throw FormatException('Invalid XML format: $e');
+    }
   }
 
   // Helper methods for HTML escaping
