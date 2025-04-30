@@ -1,5 +1,4 @@
 import 'package:drift/drift.dart';
-import '../../models/url_item.dart' as model;
 import 'categories.dart';
 
 /// Table definition for URL items in the Later app.

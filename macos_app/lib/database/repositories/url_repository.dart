@@ -3,6 +3,7 @@ import 'package:uuid/uuid.dart';
 import 'dart:convert';
 
 import '../database.dart';
+import '../../utils/url_validator.dart';
 import '../../models/url_item.dart' as model;
 import 'base_repository.dart';
 
@@ -66,7 +67,7 @@ class UrlRepository extends BaseRepository {
 
   /// Gets a URL by its UUID.
   Future<model.UrlItem?> getUrlByUuid(String uuid) async {
-    return executeDbOperation(
+    return executeDbOperation<model.UrlItem?>(
       () async {
         final url = await database.getUrlByUuid(uuid);
         return url != null ? _mapDbUrlToModel(url) : null;
@@ -77,7 +78,7 @@ class UrlRepository extends BaseRepository {
 
   /// Creates a new URL.
   Future<model.UrlItem?> createUrl(model.UrlItem url) async {
-    return executeDbOperation(
+    return executeDbOperation<model.UrlItem?>(
       () async {
         final companion = _mapModelUrlToCompanion(url);
         await database.insertUrl(companion);
@@ -124,7 +125,7 @@ class UrlRepository extends BaseRepository {
   }
 
   /// Updates the status of a URL.
-  Future<bool> updateUrlStatus(String uuid, model.UrlStatus status) async {
+  Future<bool> updateUrlStatus(String uuid, UrlStatus status) async {
     return executeDbOperationWithDefault(
       () async {
         final result = await database.updateUrlStatus(uuid, status);
@@ -165,7 +166,7 @@ class UrlRepository extends BaseRepository {
     String? description,
     required String categoryId,
     Map<String, dynamic>? metadata,
-    model.UrlStatus status = model.UrlStatus.unknown,
+    UrlStatus status = UrlStatus.unknown,
   }) async {
     final newUrl = model.UrlItem(
       id: const Uuid().v4(),
@@ -177,7 +178,7 @@ class UrlRepository extends BaseRepository {
       updatedAt: DateTime.now(),
       metadata: metadata,
       status: status,
-      lastChecked: status != model.UrlStatus.unknown ? DateTime.now() : null,
+      lastChecked: status != UrlStatus.unknown ? DateTime.now() : null,
     );
     
     return createUrl(newUrl);
@@ -204,7 +205,7 @@ class UrlRepository extends BaseRepository {
       createdAt: dbUrl.createdAt,
       updatedAt: dbUrl.updatedAt,
       metadata: metadata,
-      status: dbUrl.status,
+      status: UrlStatus.values[dbUrl.status],
       lastChecked: dbUrl.lastChecked,
     );
   }
@@ -228,9 +229,9 @@ class UrlRepository extends BaseRepository {
       description: Value(url.description),
       categoryId: Value(url.categoryId),
       createdAt: Value(url.createdAt),
-      updatedAt: Value(url.updatedAt ?? DateTime.now()),
+      updatedAt: Value(url.updatedAt),
       metadata: Value(metadataJson),
-      status: Value(url.status),
+      status: Value(url.status.index),
       lastChecked: Value(url.lastChecked),
     );
   }

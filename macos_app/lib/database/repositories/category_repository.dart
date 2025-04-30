@@ -40,7 +40,7 @@ class CategoryRepository extends BaseRepository {
 
   /// Gets a category by its UUID.
   Future<model.Category?> getCategoryByUuid(String uuid) async {
-    return executeDbOperation(
+    return executeDbOperation<model.Category?>(
       () async {
         final category = await database.getCategoryByUuid(uuid);
         return category != null ? _mapDbCategoryToModel(category) : null;
@@ -51,7 +51,7 @@ class CategoryRepository extends BaseRepository {
 
   /// Creates a new category.
   Future<model.Category?> createCategory(model.Category category) async {
-    return executeDbOperation(
+    return executeDbOperation<model.Category?>(
       () async {
         final companion = _mapModelCategoryToCompanion(category);
         await database.insertCategory(companion);
@@ -63,7 +63,7 @@ class CategoryRepository extends BaseRepository {
 
   /// Updates an existing category.
   Future<model.Category?> updateCategory(model.Category category) async {
-    return executeDbOperation(
+    return executeDbOperation<model.Category?>(
       () async {
         final companion = _mapModelCategoryToCompanion(category);
         await database.updateCategory(companion);

@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 import 'package:drift/drift.dart';
-import 'package:uuid/uuid.dart';
 
 import '../../models/category.dart' as model_category;
 import '../../models/url_item.dart' as model_url;
@@ -131,7 +130,7 @@ class DatabaseMigrator {
             createdAt: Value(url.createdAt),
             updatedAt: Value(url.updatedAt),
             metadata: Value(metadataJson),
-            status: Value(url.status),
+            status: Value(url.status.index),
             lastChecked: Value(url.lastChecked),
             isDeleted: const Value(false),
           ));

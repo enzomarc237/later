@@ -2,9 +2,9 @@
 import 'dart:io';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
+import 'package:later/utils/url_validator.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
-import 'package:flutter/foundation.dart';
 
 // Import tables
 import 'tables/categories.dart';
@@ -30,7 +30,7 @@ part 'database.g.dart';
 )
 class LaterDatabase extends _$LaterDatabase {
   /// Creates a database instance using the provided [executor].
-  LaterDatabase(QueryExecutor executor) : super(executor);
+  LaterDatabase(super.executor);
 
   /// The current schema version of the database.
   @override
@@ -80,7 +80,7 @@ class LaterDatabase extends _$LaterDatabase {
 
   /// Inserts a new category.
   Future<int> insertCategory(CategoriesCompanion category) {
-    return into(categories).insert(category);
+    return this.into(categories).insert(category);
   }
 
   /// Updates an existing category.
@@ -141,7 +141,7 @@ class LaterDatabase extends _$LaterDatabase {
 
   /// Inserts a new URL.
   Future<int> insertUrl(UrlItemsCompanion url) {
-    return into(urlItems).insert(url);
+    return this.into(urlItems).insert(url);
   }
 
   /// Updates an existing URL.
@@ -174,7 +174,7 @@ class LaterDatabase extends _$LaterDatabase {
     return (update(urlItems)
           ..where((u) => u.uuid.equals(uuid)))
         .write(UrlItemsCompanion(
-          status: Value(status),
+          status: Value(status.index),
           lastChecked: Value(DateTime.now()),
           updatedAt: Value(DateTime.now()),
         ));
@@ -195,9 +195,11 @@ class LaterDatabase extends _$LaterDatabase {
 
   /// Counts the number of URLs in a category.
   Future<int> countUrlsInCategory(String categoryId) async {
-    final query = selectCount(urlItems)
-      ..where((u) => u.categoryId.equals(categoryId) & u.isDeleted.equals(false));
-    return await query.getSingle();
+    final query = await customSelect(
+      'SELECT COUNT(*) as count FROM url_items WHERE category_id = ? AND is_deleted = 0',
+      variables: [Variable.withString(categoryId)],
+    ).getSingle();
+    return query.read<int>('count');
   }
 
   // TRANSACTION HELPERS
