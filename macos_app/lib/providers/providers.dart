@@ -2,7 +2,6 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../utils/backup_service.dart';
-import '../utils/file_storage_service.dart';
 import '../utils/metadata_service.dart';
 
 // Export all providers
@@ -16,19 +15,10 @@ final sharedPreferencesProvider = Provider<SharedPreferences>(
   name: 'SharedPreferencesProvider',
 );
 
-// StateProvider for data folder path to break circular dependency
-final dataFolderPathProvider = StateProvider<String>((ref) => '');
-
-// FileStorageService provider that uses the data folder path from the StateProvider
-final fileStorageServiceProvider = Provider<FileStorageService>((ref) {
-  final dataFolderPath = ref.watch(dataFolderPathProvider);
-  return FileStorageService(dataFolderPath);
-});
-
-// BackupService provider that uses the FileStorageService
+// BackupService provider
 final backupServiceProvider = Provider<BackupService>((ref) {
-  final fileStorage = ref.watch(fileStorageServiceProvider);
-  return BackupService(fileStorage: fileStorage);
+  // This provides a basic instance. AppNotifier will configure maxBackups.
+  return BackupService();
 });
 
 // MetadataService provider for fetching website metadata and favicons
