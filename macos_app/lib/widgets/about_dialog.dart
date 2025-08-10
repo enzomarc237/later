@@ -24,15 +24,9 @@ void showAboutLaterDialog(BuildContext context) {
           },
           child: const Text('Close'),
         ),
-        secondaryButton: PushButton(
-          controlSize: ControlSize.large,
-          onPressed: () {
-            // Open the GitHub repository
-          },
-          child: const Text('GitHub'),
-        ),
       );
     },
   );
 }
+
 
