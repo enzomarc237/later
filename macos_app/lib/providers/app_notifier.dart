@@ -185,8 +185,9 @@ class AppNotifier extends Notifier<AppState> {
       urls: updatedUrls,
       isLoading: false,
     );
-    await _saveCategories();
-    await _saveUrls();
+    await _preferencesRepository.deleteCategory(categoryId);
+    await _saveCategories(); // Re-save categories after deletion to ensure consistency
+    await _saveUrls(); // Re-save URLs after category deletion to update categoryId to null
   }
 
   void selectCategory(String? categoryId) {
@@ -223,7 +224,8 @@ class AppNotifier extends Notifier<AppState> {
     final updatedUrls = List<UrlItem>.from(state.urls)
       ..removeWhere((url) => url.id == urlId);
     state = state.copyWith(urls: updatedUrls, isLoading: false);
-    await _saveUrls();
+    await _preferencesRepository.deleteUrl(urlId);
+    await _saveUrls(); // Re-save URLs after deletion to ensure consistency
   }
 
   void toggleSelectionMode() {
@@ -264,6 +266,7 @@ class AppNotifier extends Notifier<AppState> {
 
   Future<void> deleteSelectedUrls() async {
     state = state.copyWith(isLoading: true);
+    final urlsToDelete = state.urls.where((url) => state.selectedUrlIds.contains(url.id)).toList();
     final updatedUrls = List<UrlItem>.from(state.urls)
       ..removeWhere((url) => state.selectedUrlIds.contains(url.id));
     state = state.copyWith(
@@ -272,7 +275,10 @@ class AppNotifier extends Notifier<AppState> {
       selectionMode: false,
       clearSelectedUrls: true,
     );
-    await _saveUrls();
+    for (final urlItem in urlsToDelete) {
+      await _preferencesRepository.deleteUrl(urlItem.id);
+    }
+    await _saveUrls(); // Re-save URLs after deletion to ensure consistency
   }
 
   Future<void> openSelectedUrls() async {
@@ -352,7 +358,7 @@ class AppNotifier extends Notifier<AppState> {
       }
     }
     state = state.copyWith(categories: [...state.categories, ...newCategories]);
-    await _saveCategories();
+    await _preferencesRepository.saveCategories(newCategories); // Save newly imported categories
 
     // Add imported URLs, ensuring category IDs are valid
     final newUrls = <UrlItem>[];
@@ -367,7 +373,7 @@ class AppNotifier extends Notifier<AppState> {
       }
     }
     state = state.copyWith(urls: [...state.urls, ...newUrls]);
-    await _saveUrls();
+    await _preferencesRepository.saveUrls(newUrls); // Save newly imported URLs
 
     state = state.copyWith(isLoading: false);
 
@@ -529,7 +535,7 @@ class AppNotifier extends Notifier<AppState> {
 
       // Update the BackupService's maxBackups setting
       _backupService = BackupService(
-        fileStorage: ref.read(fileStorageServiceProvider),
+        fileStorage: null, // FileStorageService is removed
         maxBackups: settings.maxBackups,
       );
 
