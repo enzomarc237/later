@@ -130,7 +130,6 @@ class DatabaseService {
     ''');
   }
 
-  @override
   Future<void> initialize() async {
     if (_isInitialized) return;
 
