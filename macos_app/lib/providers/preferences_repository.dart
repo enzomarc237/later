@@ -84,8 +84,7 @@ class PreferencesRepository {
   // Settings
   Future<Settings> getSettings() async {
     try {
-      // Settings are not stored in the database currently, return default
-      return Settings();
+      return await _databaseService.getSettings();
     } catch (e) {
       debugPrint('Error getting settings: $e');
       return Settings();
@@ -94,7 +93,7 @@ class PreferencesRepository {
 
   Future<void> saveSettings(Settings settings) async {
     try {
-      // Settings are not stored in the database currently, no-op
+      await _databaseService.saveSettings(settings);
     } catch (e) {
       debugPrint('Error saving settings: $e');
     }
@@ -115,3 +114,4 @@ final preferencesRepositoryProvider = Provider<PreferencesRepository>(
     return PreferencesRepository(databaseService);
   },
 );
+

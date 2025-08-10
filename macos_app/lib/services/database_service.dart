@@ -93,8 +93,82 @@ class DatabaseService {
     await _client.execute("DELETE FROM url_items");
     await _client.execute("DELETE FROM categories");
   }
+  Future<Settings> getSettings() async {
+    await initialize();
+    final ResultSet rs = await _client.query('SELECT value FROM settings WHERE key = ?', positional: ['settings']);
+    if (rs.rows.isEmpty) {
+      return Settings();
+    }
+    try {
+      final value = rs.rows.first['value'] as String?;
+      if (value == null) {
+        return Settings();
+      }
+      final Map<String, dynamic> json = jsonDecode(value);
+      return Settings.fromJson(json);
+    } catch (e) {
+      return Settings();
+    }
+  }
+
+  Future<void> saveSettings(Settings settings) async {
+    await initialize();
+    final jsonString = jsonEncode(settings.toJson());
+    await _client.execute(
+      'INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)',
+      positional: ['settings', jsonString],
+    );
+  }
+
+  Future<void> _createSettingsTable() async {
+    await initialize();
+    await _client.execute('''
+      CREATE TABLE IF NOT EXISTS settings (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL
+      );
+    ''');
+  }
+
+  Future<void> initialize() async {
+    if (_isInitialized) return;
+
+    final dir = await getApplicationSupportDirectory();
+    final path = '${dir.path}/later.db';
+
+    _client = LibsqlClient(path);
+    await _client.connect();
+
+    // Create tables if they don't exist
+    await _client.execute('''
+      CREATE TABLE IF NOT EXISTS categories (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        createdAt TEXT NOT NULL,
+        updatedAt TEXT NOT NULL
+      );
+    ''');
+
+    await _client.execute('''
+      CREATE TABLE IF NOT EXISTS url_items (
+        id TEXT PRIMARY KEY,
+        url TEXT NOT NULL,
+        title TEXT NOT NULL,
+        description TEXT,
+        categoryId TEXT,
+        createdAt TEXT NOT NULL,
+        updatedAt TEXT NOT NULL,
+        FOREIGN KEY (categoryId) REFERENCES categories (id) ON DELETE SET NULL
+      );
+    ''');
+
+    await _createSettingsTable();
+
+    _isInitialized = true;
+  }
 
   Future<void> close() async {
     if (_isInitialized) {
       await _client.close();
       _isInitialized = false;
+
