@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
 import 'package:macos_ui/macos_ui.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:local_notifier/local_notifier.dart';
@@ -46,7 +47,7 @@ class LaterMenuBar {
               }),
               const Divider(),
               _buildMenuItem(context, 'Quit Later', '⌘Q', () {
-                // TODO: Implement graceful app exit
+                SystemNavigator.pop();
               }),
             ],
           ),
