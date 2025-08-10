@@ -159,7 +159,7 @@ class AppNotifier extends Notifier<AppState> {
     final updatedCategories = List<Category>.from(state.categories)
       ..add(category);
     state = state.copyWith(categories: updatedCategories, isLoading: false);
-    await _saveCategories();
+    await _preferencesRepository.saveCategories(updatedCategories);
   }
 
   Future<void> updateCategory(Category updatedCategory) async {
@@ -168,7 +168,7 @@ class AppNotifier extends Notifier<AppState> {
       return category.id == updatedCategory.id ? updatedCategory : category;
     }).toList();
     state = state.copyWith(categories: updatedCategories, isLoading: false);
-    await _saveCategories();
+    await _preferencesRepository.saveCategories(updatedCategories);
   }
 
   Future<void> deleteCategory(String categoryId) async {
@@ -186,8 +186,8 @@ class AppNotifier extends Notifier<AppState> {
       isLoading: false,
     );
     await _preferencesRepository.deleteCategory(categoryId);
-    await _saveCategories(); // Re-save categories after deletion to ensure consistency
-    await _saveUrls(); // Re-save URLs after category deletion to update categoryId to null
+    await _preferencesRepository.saveCategories(updatedCategories); // Re-save categories after deletion to ensure consistency
+    await _preferencesRepository.saveUrls(updatedUrls); // Re-save URLs after category deletion to update categoryId to null
   }
 
   void selectCategory(String? categoryId) {
@@ -203,7 +203,7 @@ class AppNotifier extends Notifier<AppState> {
     state = state.copyWith(isLoading: true);
     final updatedUrls = List<UrlItem>.from(state.urls)..add(url);
     state = state.copyWith(urls: updatedUrls, isLoading: false);
-    await _saveUrls();
+    await _preferencesRepository.saveUrls(updatedUrls);
 
     if (fetchMetadata) {
       await _fetchMetadataForUrl(url);
@@ -216,7 +216,7 @@ class AppNotifier extends Notifier<AppState> {
       return url.id == updatedUrl.id ? updatedUrl : url;
     }).toList();
     state = state.copyWith(urls: updatedUrls, isLoading: false);
-    await _saveUrls();
+    await _preferencesRepository.saveUrls(updatedUrls);
   }
 
   Future<void> deleteUrl(String urlId) async {
@@ -225,7 +225,7 @@ class AppNotifier extends Notifier<AppState> {
       ..removeWhere((url) => url.id == urlId);
     state = state.copyWith(urls: updatedUrls, isLoading: false);
     await _preferencesRepository.deleteUrl(urlId);
-    await _saveUrls(); // Re-save URLs after deletion to ensure consistency
+    await _preferencesRepository.saveUrls(updatedUrls); // Re-save URLs after deletion to ensure consistency
   }
 
   void toggleSelectionMode() {
@@ -278,7 +278,7 @@ class AppNotifier extends Notifier<AppState> {
     for (final urlItem in urlsToDelete) {
       await _preferencesRepository.deleteUrl(urlItem.id);
     }
-    await _saveUrls(); // Re-save URLs after deletion to ensure consistency
+    await _preferencesRepository.saveUrls(updatedUrls); // Re-save URLs after deletion to ensure consistency
   }
 
   Future<void> openSelectedUrls() async {
