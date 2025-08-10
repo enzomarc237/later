@@ -89,6 +89,11 @@ class AppState {
   }
 
   @override
+  String toString() {
+    return 'AppState(message: $message, appVersion: $appVersion, currentDirectory: $currentDirectory, categories: $categories, selectedCategoryId: $selectedCategoryId, urls: $urls, isLoading: $isLoading, selectionMode: $selectionMode, selectedUrlIds: $selectedUrlIds, validationProgress: $validationProgress)';
+  }
+
+  @override
   bool operator ==(covariant AppState other) {
     if (identical(this, other)) return true;
 
@@ -100,7 +105,8 @@ class AppState {
         listEquals(other.urls, urls) &&
         other.isLoading == isLoading &&
         other.selectionMode == selectionMode &&
-        setEquals(other.selectedUrlIds, selectedUrlIds);
+        setEquals(other.selectedUrlIds, selectedUrlIds) &&
+        other.validationProgress == validationProgress;
   }
 
   @override
@@ -113,626 +119,177 @@ class AppState {
         urls.hashCode ^
         isLoading.hashCode ^
         selectionMode.hashCode ^
-        selectedUrlIds.hashCode;
-  }
-
-  // Get the currently visible URLs (filtered by category)
-  List<UrlItem> get visibleUrls {
-    return selectedCategoryUrls;
-  }
-
-  // Get the number of selected URLs
-  int get selectedUrlCount {
-    return selectedUrlIds.length;
-  }
-
-  // Check if a URL is selected
-  bool isUrlSelected(String urlId) {
-    return selectedUrlIds.contains(urlId);
-  }
-
-  // Check if all visible URLs are selected
-  bool get areAllVisibleUrlsSelected {
-    if (visibleUrls.isEmpty) return false;
-    return visibleUrls.every((url) => selectedUrlIds.contains(url.id));
-  }
-
-  @override
-  String toString() {
-    return 'AppState(message: $message, categories: ${categories.length}, urls: ${urls.length}, selectedCategoryId: $selectedCategoryId)';
-  }
-
-  // Get URLs for the selected category or all URLs if no category is selected
-  List<UrlItem> get selectedCategoryUrls {
-    if (selectedCategoryId == null)
-      return urls; // Return all URLs when no category is selected
-    return urls.where((url) => url.categoryId == selectedCategoryId).toList();
+        selectedUrlIds.hashCode ^
+        validationProgress.hashCode;
   }
 }
 
 class AppNotifier extends Notifier<AppState> {
-  late PreferencesRepository _preferencesRepository;
-  late BackupService _backupService;
-  late UrlValidator _urlValidator;
-  late MetadataService _metadataService;
+  late final PreferencesRepository _preferencesRepository;
+  late final BackupService _backupService;
+  late final MetadataService _metadataService;
+  late final UrlValidator _urlValidator;
 
-  // Settings for automatic backups
-  bool _autoBackupEnabled = true;
+  bool _autoBackupEnabled = false;
 
   @override
   AppState build() {
     _preferencesRepository = ref.read(preferencesRepositoryProvider);
     _backupService = ref.read(backupServiceProvider);
-    _urlValidator = UrlValidator();
     _metadataService = ref.read(metadataServiceProvider);
+    _urlValidator = UrlValidator();
 
-    // Initialize auto backup setting from settings
-    final settings = ref.read(settingsNotifier);
-    _autoBackupEnabled = settings.autoBackupEnabled;
+    _loadData();
 
-    // Load initial state
-    final initialState = AppState(
-      message: 'initialized',
+    // Listen for changes in settings to update auto backup status
+    ref.listen(settingsNotifier, (previous, next) {
+      _autoBackupEnabled = next.autoBackup;
+    });
+
+    return AppState(
+      message: 'Welcome to Later!',
       appVersion: _preferencesRepository.appVersion,
       currentDirectory: _preferencesRepository.currentDirectory,
     );
-
-    state = initialState;
-
-    // Load categories and URLs from preferences
-    _loadData();
-
-    return initialState;
   }
 
-  // Backup management
-  Future<String?> createBackup({String? backupName}) async {
-    final settings = await _preferencesRepository.getSettings();
-    return _backupService.createBackup(
-      categories: state.categories,
-      urls: state.urls,
-      settings: settings,
-      backupName: backupName,
-    );
+  // Categories
+  Future<void> addCategory(Category category) async {
+    state = state.copyWith(isLoading: true);
+    final updatedCategories = List<Category>.from(state.categories)
+      ..add(category);
+    state = state.copyWith(categories: updatedCategories, isLoading: false);
+    await _saveCategories();
   }
 
-  Future<List<BackupInfo>> listBackups() async {
-    return _backupService.listBackups();
+  Future<void> updateCategory(Category updatedCategory) async {
+    state = state.copyWith(isLoading: true);
+    final updatedCategories = state.categories.map((category) {
+      return category.id == updatedCategory.id ? updatedCategory : category;
+    }).toList();
+    state = state.copyWith(categories: updatedCategories, isLoading: false);
+    await _saveCategories();
   }
 
-  Future<bool> restoreBackup(String backupFileName) async {
-    final result = await _backupService.restoreBackup(backupFileName);
-    if (result) {
-      // Reload data from storage after restore
-      await _loadData();
-      return true;
-    }
-    return false;
-  }
-
-  Future<bool> deleteBackup(String backupFileName) async {
-    return _backupService.deleteBackup(backupFileName);
-  }
-
-  // Toggle automatic backups
-  void setAutoBackup(bool enabled) {
-    _autoBackupEnabled = enabled;
-  }
-
-  void setCurrentDirectory({required String directoryPath}) {
-    state = state.copyWith(currentDirectory: directoryPath);
-    debugPrint('setDefaultDirectory: $directoryPath');
-    _preferencesRepository.setCurrentDirectory(directoryPath);
-  }
-
-  // Category management
-  void addCategory(Category category) {
-    final updatedCategories = [...state.categories, category];
-    state = state.copyWith(categories: updatedCategories);
-    _saveCategories();
-  }
-
-  void updateCategory(Category category) {
-    final index = state.categories.indexWhere((c) => c.id == category.id);
-    if (index >= 0) {
-      final updatedCategories = [...state.categories];
-      updatedCategories[index] = category;
-      state = state.copyWith(categories: updatedCategories);
-      _saveCategories();
-    }
-  }
-
-  void deleteCategory(String categoryId) {
-    final updatedCategories =
-        state.categories.where((c) => c.id != categoryId).toList();
-
-    // Also delete all URLs in this category
-    final updatedUrls =
-        state.urls.where((url) => url.categoryId != categoryId).toList();
-
-    // Clear selected category if it's the one being deleted
-    final clearSelected = state.selectedCategoryId == categoryId;
-
+  Future<void> deleteCategory(String categoryId) async {
+    state = state.copyWith(isLoading: true);
+    final updatedCategories = List<Category>.from(state.categories)
+      ..removeWhere((category) => category.id == categoryId);
+    final updatedUrls = List<UrlItem>.from(state.urls)
+      ..map((url) => url.categoryId == categoryId
+          ? url.copyWith(categoryId: null)
+          : url)
+          .toList();
     state = state.copyWith(
       categories: updatedCategories,
       urls: updatedUrls,
-      clearSelectedCategory: clearSelected,
-    );
-
-    _saveCategories();
-    _saveUrls();
-  }
-
-  void selectCategory(String? categoryId) {
-    state = state.copyWith(selectedCategoryId: categoryId);
-  }
-
-  // Explicitly clear the selected category
-  void clearSelectedCategory() {
-    debugPrint('Explicitly clearing selected category');
-    state = state.copyWith(
-      selectedCategoryId: null,
-      clearSelectedCategory: true,
-    );
-    debugPrint('Selected category after clearing: ${state.selectedCategoryId}');
-  }
-
-  // URL management
-
-  /// Fetches metadata for a URL
-  Future<WebsiteMetadata?> _fetchMetadata(String url) async {
-    try {
-      return await _metadataService.fetchMetadata(url);
-    } catch (e) {
-      debugPrint('Error fetching metadata: $e');
-      return null;
-    }
-  }
-
-  /// Enriches a URL with metadata
-  UrlItem enrichUrlWithMetadata(UrlItem url, WebsiteMetadata metadata) {
-    // Only update title and description if they're empty
-    final title = url.title.isEmpty ? metadata.title : url.title;
-    final description = url.description?.isEmpty ?? true
-        ? metadata.description
-        : url.description;
-
-    // Create or update metadata map
-    final existingMetadata = url.metadata ?? {};
-    final updatedMetadata = {
-      ...existingMetadata,
-      'faviconUrl': metadata.faviconUrl,
-      'title': metadata.title,
-      'description': metadata.description,
-      'lastFetched': DateTime.now().toIso8601String(),
-    };
-
-    return url.copyWith(
-      title: title,
-      description: description,
-      metadata: updatedMetadata,
-    );
-  }
-
-  /// Adds a URL to the app, optionally fetching metadata
-  Future<void> addUrl(UrlItem url, {bool fetchMetadata = true}) async {
-    // Add the URL immediately for better UX
-    var updatedUrl = url;
-    final updatedUrls = [...state.urls, updatedUrl];
-    state = state.copyWith(urls: updatedUrls);
-
-    // Fetch metadata if requested
-    if (fetchMetadata) {
-      final metadata = await _fetchMetadata(url.url);
-      if (metadata != null) {
-        // Update the URL with metadata
-        updatedUrl = enrichUrlWithMetadata(url, metadata);
-
-        // Update the state with the enriched URL
-        final index = updatedUrls.indexOf(url);
-        if (index >= 0) {
-          updatedUrls[index] = updatedUrl;
-          state = state.copyWith(urls: updatedUrls);
-        }
-      }
-    }
-
-    _saveUrls();
-  }
-
-  /// Updates a URL, optionally fetching new metadata
-  Future<void> updateUrl(UrlItem url, {bool fetchMetadata = false}) async {
-    final index = state.urls.indexWhere((u) => u.id == url.id);
-    if (index < 0) return;
-
-    // Update the URL immediately for better UX
-    var updatedUrl = url;
-    final updatedUrls = [...state.urls];
-    updatedUrls[index] = updatedUrl;
-    state = state.copyWith(urls: updatedUrls);
-
-    // Fetch metadata if requested
-    if (fetchMetadata) {
-      final metadata = await _fetchMetadata(url.url);
-      if (metadata != null) {
-        // Update the URL with metadata
-        updatedUrl = enrichUrlWithMetadata(url, metadata);
-        updatedUrls[index] = updatedUrl;
-        state = state.copyWith(urls: updatedUrls);
-      }
-    }
-
-    _saveUrls();
-  }
-
-  void deleteUrl(String urlId) {
-    final updatedUrls = state.urls.where((u) => u.id != urlId).toList();
-    state = state.copyWith(urls: updatedUrls);
-    _saveUrls();
-  }
-
-  // Bulk operations
-
-  // Toggle selection mode
-  void toggleSelectionMode() {
-    final newSelectionMode = !state.selectionMode;
-    state = state.copyWith(
-      selectionMode: newSelectionMode,
-      // Clear selections when exiting selection mode
-      clearSelectedUrls: !newSelectionMode,
-    );
-  }
-
-  // Toggle selection for a URL
-  void toggleUrlSelection(String urlId) {
-    if (!state.selectionMode) {
-      // Enable selection mode when selecting the first URL
-      state = state.copyWith(selectionMode: true);
-    }
-
-    final selectedUrlIds = Set<String>.from(state.selectedUrlIds);
-    if (selectedUrlIds.contains(urlId)) {
-      selectedUrlIds.remove(urlId);
-    } else {
-      selectedUrlIds.add(urlId);
-    }
-
-    state = state.copyWith(selectedUrlIds: selectedUrlIds);
-  }
-
-  // Select all visible URLs
-  void selectAllVisibleUrls() {
-    final visibleUrls = state.visibleUrls;
-    if (visibleUrls.isEmpty) return;
-
-    final selectedUrlIds = Set<String>.from(state.selectedUrlIds);
-    for (final url in visibleUrls) {
-      selectedUrlIds.add(url.id);
-    }
-
-    state = state.copyWith(
-      selectionMode: true,
-      selectedUrlIds: selectedUrlIds,
-    );
-  }
-
-  // Deselect all URLs
-  void deselectAllUrls() {
-    state = state.copyWith(clearSelectedUrls: true);
-  }
-
-  // Delete selected URLs
-  void deleteSelectedUrls() {
-    if (state.selectedUrlIds.isEmpty) return;
-
-    final updatedUrls = state.urls
-        .where((url) => !state.selectedUrlIds.contains(url.id))
-        .toList();
-
-    state = state.copyWith(
-      urls: updatedUrls,
-      clearSelectedUrls: true,
-      selectionMode: false,
-    );
-
-    _saveUrls();
-  }
-
-  // Move selected URLs to a category
-  void moveSelectedUrlsToCategory(String categoryId) {
-    if (state.selectedUrlIds.isEmpty) return;
-
-    final updatedUrls = [...state.urls];
-
-    for (int i = 0; i < updatedUrls.length; i++) {
-      if (state.selectedUrlIds.contains(updatedUrls[i].id)) {
-        updatedUrls[i] = updatedUrls[i].copyWith(categoryId: categoryId);
-      }
-    }
-
-    state = state.copyWith(
-      urls: updatedUrls,
-      clearSelectedUrls: true,
-      selectionMode: false,
-    );
-
-    _saveUrls();
-  }
-
-  // URL validation methods
-
-  /// Validates a single URL and updates its status
-  Future<UrlStatus> validateUrl(String urlId) async {
-    final index = state.urls.indexWhere((u) => u.id == urlId);
-    if (index < 0) return UrlStatus.error;
-
-    final url = state.urls[index];
-    final status = await _urlValidator.validateUrl(url.url);
-
-    // Update the URL with the new status
-    final updatedUrl = url.copyWith(
-      status: status,
-      lastChecked: DateTime.now(),
-    );
-
-    final updatedUrls = [...state.urls];
-    updatedUrls[index] = updatedUrl;
-
-    state = state.copyWith(urls: updatedUrls);
-    _saveUrls();
-
-    return status;
-  }
-
-  /// Validates all URLs in the app with progress updates
-  Future<Map<String, UrlStatus>> validateAllUrls() async {
-    if (state.urls.isEmpty) return {};
-
-    final urlStrings = state.urls.map((u) => u.url).toList();
-    final results = <String, UrlStatus>{};
-    final updatedUrls = [...state.urls];
-    final now = DateTime.now();
-
-    try {
-      await _urlValidator.validateUrls(
-        urlStrings,
-        onProgress: (completed, total, currentUrl) {
-          state = state.copyWith(
-            validationProgress: ValidationProgress(
-              completed: completed,
-              total: total,
-              currentUrl: currentUrl,
-            ),
-          );
-        },
-        onMetadataUpdated: (url, metadata) {
-          final index = updatedUrls.indexWhere((u) => u.url == url);
-          if (index >= 0) {
-            final existingMetadata = updatedUrls[index].metadata ?? {};
-            updatedUrls[index] = updatedUrls[index].copyWith(
-              metadata: {...existingMetadata, ...metadata},
-            );
-          }
-        },
-      ).then((validationResults) {
-        results.addAll(validationResults);
-
-        // Update URL statuses
-        for (var i = 0; i < updatedUrls.length; i++) {
-          final status = validationResults[updatedUrls[i].url];
-          if (status != null) {
-            updatedUrls[i] = updatedUrls[i].copyWith(
-              status: status,
-              lastChecked: now,
-            );
-          }
-        }
-      });
-
-      state = state.copyWith(
-        urls: updatedUrls,
-        clearValidationProgress: true,
-      );
-
-      _saveUrls();
-    } catch (e) {
-      debugPrint('Error validating URLs: $e');
-      state = state.copyWith(clearValidationProgress: true);
-    }
-
-    return results;
-  }
-
-  /// Validates all URLs in a specific category
-  Future<Map<String, UrlStatus>> validateCategoryUrls(String categoryId) async {
-    final categoryUrls =
-        state.urls.where((u) => u.categoryId == categoryId).toList();
-    if (categoryUrls.isEmpty) return {};
-
-    state = state.copyWith(isLoading: true);
-
-    final results = <String, UrlStatus>{};
-    final updatedUrls = [...state.urls];
-    final now = DateTime.now();
-
-    for (int i = 0; i < updatedUrls.length; i++) {
-      final url = updatedUrls[i];
-      if (url.categoryId != categoryId) continue;
-
-      final status = await _urlValidator.validateUrl(url.url);
-
-      updatedUrls[i] = url.copyWith(
-        status: status,
-        lastChecked: now,
-      );
-
-      results[url.id] = status;
-    }
-
-    state = state.copyWith(
-      urls: updatedUrls,
       isLoading: false,
     );
-
-    _saveUrls();
-
-    return results;
-  }
-
-  /// Validates all currently visible URLs (based on selected category)
-  Future<Map<String, UrlStatus>> validateVisibleUrls() async {
-    final visibleUrls = state.visibleUrls;
-    if (visibleUrls.isEmpty) return {};
-
-    state = state.copyWith(isLoading: true);
-
-    final results = <String, UrlStatus>{};
-    final updatedUrls = [...state.urls];
-    final now = DateTime.now();
-    final visibleIds = visibleUrls.map((u) => u.id).toSet();
-
-    for (int i = 0; i < updatedUrls.length; i++) {
-      final url = updatedUrls[i];
-      if (!visibleIds.contains(url.id)) continue;
-
-      final status = await _urlValidator.validateUrl(url.url);
-
-      updatedUrls[i] = url.copyWith(
-        status: status,
-        lastChecked: now,
-      );
-
-      results[url.id] = status;
-    }
-
-    state = state.copyWith(
-      urls: updatedUrls,
-      isLoading: false,
-    );
-
-    _saveUrls();
-
-    return results;
-  }
-
-  /// Validates selected URLs
-  Future<Map<String, UrlStatus>> validateSelectedUrls() async {
-    if (state.selectedUrlIds.isEmpty) return {};
-
-    state = state.copyWith(isLoading: true);
-
-    final results = <String, UrlStatus>{};
-    final updatedUrls = [...state.urls];
-    final now = DateTime.now();
-
-    for (int i = 0; i < updatedUrls.length; i++) {
-      final url = updatedUrls[i];
-      if (!state.selectedUrlIds.contains(url.id)) continue;
-
-      final status = await _urlValidator.validateUrl(url.url);
-
-      updatedUrls[i] = url.copyWith(
-        status: status,
-        lastChecked: now,
-      );
-
-      results[url.id] = status;
-    }
-
-    state = state.copyWith(
-      urls: updatedUrls,
-      isLoading: false,
-    );
-
-    _saveUrls();
-
-    return results;
-  }
-
-  /// Returns a list of invalid URLs (dead links)
-  List<UrlItem> getInvalidUrls() {
-    return state.urls.where((url) => url.status.isInvalid).toList();
-  }
-
-  /// Returns a list of valid URLs
-  List<UrlItem> getValidUrls() {
-    return state.urls.where((url) => url.status.isValid).toList();
-  }
-
-  /// Returns a list of URLs that haven't been validated yet
-  List<UrlItem> getUnvalidatedUrls() {
-    return state.urls.where((url) => url.status.isUnknown).toList();
-  }
-
-  // Data management
-  Future<void> clearData() async {
-    state = state.copyWith(
-      categories: [],
-      urls: [],
-      clearSelectedCategory: true,
-      message: 'data_cleared',
-    );
-
-    // Persist the empty lists to storage
     await _saveCategories();
     await _saveUrls();
   }
 
-  // Import/Export
-  ExportData exportData() {
-    return ExportData(
-      categories: state.categories,
-      urls: state.urls,
-      version: state.appVersion,
-    );
-  }
-
-  void importData(ExportData data) {
-    // Preserve existing categories if the imported data has an empty categories array
-    final categories =
-        data.categories.isEmpty ? state.categories : data.categories;
-
+  void selectCategory(String? categoryId) {
     state = state.copyWith(
-      categories: categories,
-      urls: data.urls,
-      isLoading: false,
+      selectedCategoryId: categoryId,
+      clearSelectedUrls: true,
+      selectionMode: false,
     );
-
-    _saveCategories();
-    _saveUrls();
   }
 
-  /// Open all selected URLs in browser with rate limiting to prevent browser crashes
+  // URLs
+  Future<void> addUrl(UrlItem url, {bool fetchMetadata = false}) async {
+    state = state.copyWith(isLoading: true);
+    final updatedUrls = List<UrlItem>.from(state.urls)..add(url);
+    state = state.copyWith(urls: updatedUrls, isLoading: false);
+    await _saveUrls();
+
+    if (fetchMetadata) {
+      await _fetchMetadataForUrl(url);
+    }
+  }
+
+  Future<void> updateUrl(UrlItem updatedUrl) async {
+    state = state.copyWith(isLoading: true);
+    final updatedUrls = state.urls.map((url) {
+      return url.id == updatedUrl.id ? updatedUrl : url;
+    }).toList();
+    state = state.copyWith(urls: updatedUrls, isLoading: false);
+    await _saveUrls();
+  }
+
+  Future<void> deleteUrl(String urlId) async {
+    state = state.copyWith(isLoading: true);
+    final updatedUrls = List<UrlItem>.from(state.urls)
+      ..removeWhere((url) => url.id == urlId);
+    state = state.copyWith(urls: updatedUrls, isLoading: false);
+    await _saveUrls();
+  }
+
+  void toggleSelectionMode() {
+    state = state.copyWith(
+      selectionMode: !state.selectionMode,
+      clearSelectedUrls: true,
+    );
+  }
+
+  void selectUrl(String urlId, bool isSelected) {
+    final updatedSelectedUrlIds = Set<String>.from(state.selectedUrlIds);
+    if (isSelected) {
+      updatedSelectedUrlIds.add(urlId);
+    } else {
+      updatedSelectedUrlIds.remove(urlId);
+    }
+    state = state.copyWith(selectedUrlIds: updatedSelectedUrlIds);
+  }
+
+  void selectAllVisibleUrls() {
+    final visibleUrls = state.urls.where((url) {
+      return state.selectedCategoryId == null ||
+          url.categoryId == state.selectedCategoryId;
+    }).toList();
+
+    final allSelected = state.selectedUrlIds.containsAll(
+      visibleUrls.map((e) => e.id),
+    );
+
+    if (allSelected) {
+      state = state.copyWith(clearSelectedUrls: true);
+    } else {
+      state = state.copyWith(
+        selectedUrlIds: visibleUrls.map((e) => e.id).toSet(),
+      );
+    }
+  }
+
+  Future<void> deleteSelectedUrls() async {
+    state = state.copyWith(isLoading: true);
+    final updatedUrls = List<UrlItem>.from(state.urls)
+      ..removeWhere((url) => state.selectedUrlIds.contains(url.id));
+    state = state.copyWith(
+      urls: updatedUrls,
+      isLoading: false,
+      selectionMode: false,
+      clearSelectedUrls: true,
+    );
+    await _saveUrls();
+  }
+
   Future<void> openSelectedUrls() async {
     if (state.selectedUrlIds.isEmpty) return;
 
-    // Get selected URLs
-    final selectedUrls = state.urls
-        .where((url) => state.selectedUrlIds.contains(url.id))
-        .toList();
     int successCount = 0;
     int failureCount = 0;
 
-    // Set delay between opening URLs based on count to prevent browser crashes
-    // More URLs = longer delay between each
-    final int delayMs = selectedUrls.length > 20
-        ? 500
-        : selectedUrls.length > 10
-            ? 300
-            : selectedUrls.length > 5
-                ? 200
-                : 100;
-
-    for (final url in selectedUrls) {
+    for (final urlId in state.selectedUrlIds) {
+      final url = state.urls.firstWhere((element) => element.id == urlId);
       try {
-        final uri = Uri.parse(url.url);
-        if (await canLaunchUrl(uri)) {
-          await launchUrl(uri);
+        if (await canLaunchUrl(Uri.parse(url.url))) {
+          await launchUrl(Uri.parse(url.url));
           successCount++;
-
-          // Add delay between opening URLs to prevent browser from being overwhelmed
-          if (selectedUrls.indexOf(url) < selectedUrls.length - 1) {
-            await Future.delayed(Duration(milliseconds: delayMs));
+          // Add a small delay to prevent overwhelming the system
+          if (state.selectedUrlIds.length > 1) {
+            await Future.delayed(const Duration(milliseconds: 200));
           }
         } else {
           failureCount++;
@@ -756,6 +313,168 @@ class AppNotifier extends Notifier<AppState> {
       selectionMode: false,
       clearSelectedUrls: true,
     );
+  }
+
+  // Data management
+  Future<void> clearData() async {
+    state = state.copyWith(isLoading: true);
+    await _preferencesRepository.clearAllData();
+    state = state.copyWith(
+      categories: [],
+      urls: [],
+      isLoading: false,
+      selectedCategoryId: null,
+      clearSelectedUrls: true,
+      selectionMode: false,
+    );
+  }
+
+  ExportData exportData() {
+    return ExportData(
+      urls: state.urls,
+      categories: state.categories,
+      version: state.appVersion,
+      exportedAt: DateTime.now().toIso8601String(),
+    );
+  }
+
+  Future<void> importData(ExportData importData) async {
+    state = state.copyWith(isLoading: true);
+
+    // Clear existing data before importing
+    await clearData();
+
+    // Add imported categories, avoiding duplicates by name
+    final newCategories = <Category>[];
+    for (var importedCategory in importData.categories) {
+      if (!state.categories.any((c) => c.name == importedCategory.name)) {
+        newCategories.add(importedCategory);
+      }
+    }
+    state = state.copyWith(categories: [...state.categories, ...newCategories]);
+    await _saveCategories();
+
+    // Add imported URLs, ensuring category IDs are valid
+    final newUrls = <UrlItem>[];
+    for (var importedUrl in importData.urls) {
+      // If the imported URL has a categoryId, ensure it exists in our current categories
+      if (importedUrl.categoryId != null &&
+          !state.categories.any((c) => c.id == importedUrl.categoryId)) {
+        // If category doesn't exist, set categoryId to null
+        newUrls.add(importedUrl.copyWith(categoryId: null));
+      } else {
+        newUrls.add(importedUrl);
+      }
+    }
+    state = state.copyWith(urls: [...state.urls, ...newUrls]);
+    await _saveUrls();
+
+    state = state.copyWith(isLoading: false);
+
+    LocalNotification(
+      title: 'Import Complete',
+      body:
+          'Successfully imported ${importData.urls.length} URLs and ${importData.categories.length} categories.',
+    ).show();
+  }
+
+  // URL Validation
+  Future<UrlValidationStatus> validateUrl(String urlId) async {
+    final urlItem = state.urls.firstWhere((element) => element.id == urlId);
+    final status = await _urlValidator.validateUrl(urlItem.url);
+    final updatedUrl = urlItem.copyWith(validationStatus: status);
+    await updateUrl(updatedUrl);
+    return status;
+  }
+
+  Future<void> validateAllUrls() async {
+    if (state.urls.isEmpty) return;
+
+    state = state.copyWith(
+      validationProgress: ValidationProgress(
+        completed: 0,
+        total: state.urls.length,
+        currentUrl: '',
+      ),
+    );
+
+    int completedCount = 0;
+    for (final urlItem in state.urls) {
+      state = state.copyWith(
+        validationProgress: ValidationProgress(
+          completed: completedCount,
+          total: state.urls.length,
+          currentUrl: urlItem.title,
+        ),
+      );
+      final status = await _urlValidator.validateUrl(urlItem.url);
+      final updatedUrl = urlItem.copyWith(validationStatus: status);
+      await updateUrl(updatedUrl);
+      completedCount++;
+    }
+
+    state = state.copyWith(
+      validationProgress: ValidationProgress(
+        completed: completedCount,
+        total: state.urls.length,
+        currentUrl: 'Validation Complete',
+      ),
+    );
+
+    // Clear validation progress after a short delay
+    Future.delayed(const Duration(seconds: 2), () {
+      state = state.copyWith(clearValidationProgress: true);
+    });
+  }
+
+  Future<void> validateVisibleUrls() async {
+    final visibleUrls = state.urls.where((url) {
+      return state.selectedCategoryId == null ||
+          url.categoryId == state.selectedCategoryId;
+    }).toList();
+
+    if (visibleUrls.isEmpty) return;
+
+    state = state.copyWith(
+      validationProgress: ValidationProgress(
+        completed: 0,
+        total: visibleUrls.length,
+        currentUrl: '',
+      ),
+    );
+
+    int completedCount = 0;
+    for (final urlItem in visibleUrls) {
+      state = state.copyWith(
+        validationProgress: ValidationProgress(
+          completed: completedCount,
+          total: visibleUrls.length,
+          currentUrl: urlItem.title,
+        ),
+      );
+      final status = await _urlValidator.validateUrl(urlItem.url);
+      final updatedUrl = urlItem.copyWith(validationStatus: status);
+      await updateUrl(updatedUrl);
+      completedCount++;
+    }
+
+    state = state.copyWith(
+      validationProgress: ValidationProgress(
+        completed: completedCount,
+        total: visibleUrls.length,
+        currentUrl: 'Validation Complete',
+      ),
+    );
+
+    // Clear validation progress after a short delay
+    Future.delayed(const Duration(seconds: 2), () {
+      state = state.copyWith(clearValidationProgress: true);
+    });
+  }
+
+  // Settings
+  void setAutoBackup(bool enabled) {
+    _autoBackupEnabled = enabled;
   }
 
   // Private methods for persistence
