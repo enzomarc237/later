@@ -18,7 +18,7 @@
     "128": "icons/icon128.png"
   },
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "../shared/js/background.js"
   },
   "commands": {
     "_execute_action": {
